@@ -1,0 +1,63 @@
+// Module 0 platform cross-cutting baselines (validation additions E-01, E-02, E-22, AuditLog).
+
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  actorId    String?  @db.Uuid
+  action     String
+  entityType String
+  entityId   String?  @db.Uuid
+  projectId  String?  @db.Uuid
+  ip         String?
+  userAgent  String?
+  requestId  String?
+  before     Json?
+  after      Json?
+  meta       Json?
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId, createdAt])
+  @@index([actorId, createdAt])
+  @@index([projectId, createdAt])
+  @@index([action, createdAt])
+  @@index([createdAt])
+}
+
+model IdempotencyKey {
+  id               String   @id @default(uuid()) @db.Uuid
+  key              String   @unique
+  userId           String?  @db.Uuid
+  route            String
+  requestHash      String
+  responseSnapshot Json?
+  statusCode       Int?
+  createdAt        DateTime @default(now())
+  expiresAt        DateTime
+
+  @@index([createdAt])
+  @@index([expiresAt])
+}
+
+model NumberSequence {
+  id           String   @id @default(uuid()) @db.Uuid
+  scopeType    String
+  scopeId      String?
+  documentType String
+  prefix       String
+  nextValue    Int      @default(1)
+  padLength    Int      @default(6)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([scopeType, scopeId, documentType])
+}
+
+model FeatureFlag {
+  id          String   @id @default(uuid()) @db.Uuid
+  key         String   @unique
+  description String?
+  enabled     Boolean  @default(false)
+  meta        Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  updatedById String?  @db.Uuid
+}
