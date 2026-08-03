@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
-import { requireUser } from "@/features/auth";
 import { ok } from "@/lib/http";
 import { handleApiError, parseJsonBody } from "@/lib/http/api-handler";
+import { requireSessionActor } from "@/features/auth/services/session.service";
 import { updateProfileSchema } from "@/features/users/schemas/user.schemas";
 import { usersService } from "@/features/users/services/users.service";
 import { getUserById } from "@/features/users/repositories/user.repository";
@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const actor = await requireUser();
+    const actor = await requireSessionActor();
     const user = await getUserById(actor.id);
     if (!user) throw new NotFoundError("User", actor.id);
     return ok(toUserDto(user));

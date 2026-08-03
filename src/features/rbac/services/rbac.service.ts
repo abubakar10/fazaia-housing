@@ -218,9 +218,11 @@ export const rbacService = {
 
   async getUserRoles(userId: string) {
     await requirePermission(PERMISSIONS.ROLES_READ);
-    const user = await getUserById(userId);
+    const [user, rows] = await Promise.all([
+      getUserById(userId),
+      listUserRoles(userId),
+    ]);
     if (!user) throw new NotFoundError("User", userId);
-    const rows = await listUserRoles(userId);
     return rows.map((row) => ({
       id: row.id,
       roleId: row.roleId,
@@ -302,9 +304,11 @@ export const rbacService = {
 
   async getUserPermissionOverrides(userId: string) {
     await requirePermission(PERMISSIONS.ROLES_READ);
-    const user = await getUserById(userId);
+    const [user, rows] = await Promise.all([
+      getUserById(userId),
+      listUserPermissionOverrides(userId),
+    ]);
     if (!user) throw new NotFoundError("User", userId);
-    const rows = await listUserPermissionOverrides(userId);
     return rows.map((row) => ({
       id: row.id,
       permissionId: row.permissionId,

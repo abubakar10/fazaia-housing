@@ -125,6 +125,10 @@ async function getCachedAccess(userId: string): Promise<CachedAccess | null> {
   return loaded;
 }
 
+export async function getCachedAccessBundle(userId: string) {
+  return getCachedAccess(userId);
+}
+
 export async function resolveVisibilityContext(
   userId: string,
 ): Promise<VisibilityContext | null> {
@@ -181,12 +185,18 @@ export async function userHasPermission(
   permission: string,
   resource?: ResourceScope,
 ): Promise<boolean> {
-  const permissions = await resolveEffectivePermissionCodes(userId, resource);
+  const cached = await getCachedAccess(userId);
+  if (!cached) return false;
+
+  if (cached.ctx.isSuperAdmin) return true;
+
+  let permissions = cached.ctx.permissions;
+  if (resource?.projectId || resource?.orgUnitId) {
+    permissions = await resolveEffectivePermissionCodes(userId, resource);
+  }
+
   if (!permissions.has(permission)) return false;
 
   if (!resource?.projectId && !resource?.orgUnitId) return true;
-
-  const ctx = await resolveVisibilityContext(userId);
-  if (!ctx) return false;
-  return canAccessResource(ctx, resource);
+  return canAccessResource(cached.ctx, resource);
 }

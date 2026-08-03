@@ -14,6 +14,7 @@ export {
   getSession,
   getCurrentUser,
   requireSession,
+  requireSessionActor,
   requireUser,
 } from "./services/session.service";
 export { hashPassword, verifyPassword } from "./services/password.service";

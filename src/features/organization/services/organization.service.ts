@@ -42,8 +42,10 @@ async function resolveVisibleOrgIds(actorId: string): Promise<string[] | null> {
   if (!roots.length) return [];
 
   const visible = new Set(roots);
-  for (const rootId of roots) {
-    const descendants = await collectDescendantIds(rootId);
+  const descendantLists = await Promise.all(
+    roots.map((rootId) => collectDescendantIds(rootId)),
+  );
+  for (const descendants of descendantLists) {
     for (const id of descendants) visible.add(id);
   }
   return [...visible];

@@ -18,6 +18,8 @@ import {
   rateLimit,
 } from "@/features/auth/services/rate-limit.service";
 import { logger } from "@/infrastructure/logger";
+import { prisma } from "@/infrastructure/db";
+import { SYSTEM_ROLE_CODES } from "@/domain/policies/permissions";
 
 class AccountLockedError extends CredentialsSignin {
   code = "ACCOUNT_LOCKED";
@@ -179,7 +181,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
-        await markLoginSuccess(user.id);
+        // Parallel: login stamp does not block role snapshot for JWT.
+        const [, roleRows] = await Promise.all([
+          markLoginSuccess(user.id),
+          prisma.userRole.findMany({
+            where: { userId: user.id },
+            select: {
+              role: { select: { code: true, globalRead: true } },
+            },
+          }),
+        ]);
+
         writeAuditLogAsync({
           actorId: user.id,
           action: "auth.login.success",
@@ -188,12 +200,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           userAgent,
         });
 
+        const roleCodes = roleRows.map((row) => row.role.code);
+        const isSuperAdmin = roleCodes.includes(SYSTEM_ROLE_CODES.SUPER_ADMIN);
+        const globalRead =
+          isSuperAdmin || roleRows.some((row) => row.role.globalRead);
+
         return {
           id: user.id,
           email: user.email,
           name: user.name,
           status: "ACTIVE",
           avatarUrl: user.avatarUrl,
+          roleCodes,
+          isSuperAdmin,
+          globalRead,
         };
       },
     }),

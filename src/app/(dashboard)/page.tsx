@@ -1,48 +1,53 @@
+"use client";
+
 import { ShieldCheck, KeyRound, Workflow } from "lucide-react";
 import { PageHeader, PageMotion } from "@/components/layout";
 import { EmptyState } from "@/components/feedback";
 import { Badge } from "@/components/ui/badge";
-import { getCurrentUser } from "@/features/auth";
+import { useAuth } from "@/features/auth/hooks/use-auth";
 
-export default async function DashboardHomePage() {
-  const user = await getCurrentUser();
+export default function DashboardHomePage() {
+  const { user } = useAuth();
 
   return (
     <PageMotion className="space-y-8">
       <PageHeader
         title={`Welcome${user?.name ? `, ${user.name}` : ""}`}
-        description="Module 1 authentication is active. Sessions are protected with Auth.js, Argon2 password hashing, and audit logging."
+        description="Authentication, users, RBAC, and organization hierarchy are active."
       />
 
       <section className="relative overflow-hidden rounded-3xl border border-border/70 bg-card/70 p-6 shadow-soft sm:p-8">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgb(20_95_70_/0.12),transparent_45%),radial-gradient(circle_at_bottom_left,rgb(210_40_40_/0.08),transparent_40%)]" />
         <div className="relative grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
           <div className="space-y-4">
-            <Badge variant="secondary">Module 1 · Authentication</Badge>
+            <Badge variant="secondary">Modules 0–4</Badge>
             <h2 className="font-display text-2xl font-semibold tracking-tight sm:text-3xl">
-              Secure access layer ready
+              Platform foundation ready
             </h2>
             <p className="max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-[15px]">
-              Signed in as <span className="font-medium text-foreground">{user?.email}</span>.
-              User management and RBAC arrive in Modules 2–3.
+              Signed in as{" "}
+              <span className="font-medium text-foreground">
+                {user?.email ?? "…"}
+              </span>
+              .
             </p>
           </div>
           <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
             {[
               {
                 icon: KeyRound,
-                title: "Credentials + Argon2",
+                title: "Auth.js + Argon2",
                 body: "Login, lockout, password reset",
               },
               {
                 icon: ShieldCheck,
-                title: "Protected routes",
-                body: "Middleware + secure cookies",
+                title: "RBAC",
+                body: "Roles, overrides, filtered nav",
               },
               {
                 icon: Workflow,
-                title: "Audit trail",
-                body: "Login, logout, reset events",
+                title: "Organization",
+                body: "Hierarchy + user placement",
               },
             ].map((item) => (
               <div

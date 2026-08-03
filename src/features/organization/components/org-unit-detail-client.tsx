@@ -54,8 +54,8 @@ export function OrgUnitDetailClient({ orgUnitId }: { orgUnitId: string }) {
   const unitQuery = useOrgUnitQuery(orgUnitId);
   const breadcrumbQuery = useOrgBreadcrumbQuery(orgUnitId);
   const membersQuery = useOrgMembersQuery(orgUnitId);
-  const assignableQuery = useAssignableUsersQuery();
-  const treeQuery = useOrgTreeQuery();
+  const assignableQuery = useAssignableUsersQuery({ enabled: true });
+  const treeQuery = useOrgTreeQuery({ enabled: true });
   const updateMutation = useUpdateOrgUnitMutation(orgUnitId);
   const assignMutation = useAssignOrgUsersMutation(orgUnitId);
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);

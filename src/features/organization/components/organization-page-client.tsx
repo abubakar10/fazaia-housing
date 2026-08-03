@@ -42,7 +42,7 @@ export function OrganizationPageClient() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<OrgUnitDto | null>(null);
 
-  const treeQuery = useOrgTreeQuery();
+  const treeQuery = useOrgTreeQuery({ enabled: view === "tree" || createOpen });
   const listQuery = useOrgUnitsQuery({
     page,
     pageSize,
@@ -51,6 +51,7 @@ export function OrganizationPageClient() {
     status: status === "all" ? undefined : status,
     sort,
     order,
+    enabled: view === "table",
   });
   const deleteMutation = useDeleteOrgUnitMutation();
 

@@ -46,6 +46,9 @@ export const authConfig = {
         token.status = String(user.status ?? "ACTIVE");
         token.avatarUrl =
           typeof user.avatarUrl === "string" ? user.avatarUrl : null;
+        token.roleCodes = Array.isArray(user.roleCodes) ? user.roleCodes : [];
+        token.isSuperAdmin = Boolean(user.isSuperAdmin);
+        token.globalRead = Boolean(user.globalRead || user.isSuperAdmin);
       }
       return token;
     },
@@ -58,6 +61,9 @@ export const authConfig = {
         status: String(token.status ?? "ACTIVE"),
         avatarUrl:
           typeof token.avatarUrl === "string" ? token.avatarUrl : null,
+        roleCodes: Array.isArray(token.roleCodes) ? token.roleCodes : [],
+        isSuperAdmin: Boolean(token.isSuperAdmin),
+        globalRead: Boolean(token.globalRead || token.isSuperAdmin),
       };
       return session;
     },

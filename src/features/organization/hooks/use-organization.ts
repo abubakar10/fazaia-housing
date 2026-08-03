@@ -63,7 +63,7 @@ export const orgKeys = {
   assignable: [...ORG_ROOT, "assignable"] as const,
 };
 
-export function useOrgUnitsQuery(params: ListParams) {
+export function useOrgUnitsQuery(params: ListParams & { enabled?: boolean }) {
   const search = new URLSearchParams({
     page: String(params.page),
     pageSize: String(params.pageSize),
@@ -86,13 +86,17 @@ export function useOrgUnitsQuery(params: ListParams) {
       return payload as ListResponse;
     },
     placeholderData: keepPreviousData,
+    staleTime: 60_000,
+    enabled: params.enabled ?? true,
   });
 }
 
-export function useOrgTreeQuery() {
+export function useOrgTreeQuery(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: orgKeys.tree,
     queryFn: () => api<OrgTreeNode[]>("/api/v1/org-units/tree"),
+    staleTime: 5 * 60_000,
+    enabled: options?.enabled ?? true,
   });
 }
 
@@ -126,7 +130,7 @@ export function useOrgMembersQuery(id: string) {
   });
 }
 
-export function useAssignableUsersQuery() {
+export function useAssignableUsersQuery(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: orgKeys.assignable,
     queryFn: () =>
@@ -139,6 +143,8 @@ export function useAssignableUsersQuery() {
           orgUnitId: string | null;
         }>
       >("/api/v1/org-units/assignable-users"),
+    staleTime: 5 * 60_000,
+    enabled: options?.enabled ?? true,
   });
 }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { useSession } from "next-auth/react";
 import { useMyPermissionsQuery } from "../hooks/use-rbac";
 
 type CanProps = {
@@ -11,18 +12,31 @@ type CanProps = {
 };
 
 export function usePermissions() {
+  const { data: session, status } = useSession();
   const query = useMyPermissionsQuery();
+  const jwtSuperAdmin = Boolean(session?.user?.isSuperAdmin);
+  const jwtRoleCodes = session?.user?.roleCodes ?? [];
   const permissions = new Set(query.data?.permissions ?? []);
-  const roleCodes = new Set(query.data?.roleCodes ?? []);
+  const roleCodes = new Set(query.data?.roleCodes ?? jwtRoleCodes);
+  const isSuperAdmin = query.data?.isSuperAdmin ?? jwtSuperAdmin;
+
+  // Super Admin can render immediately from JWT.
+  // Everyone else waits for the permission catalog (or uses JWT roles only for role checks).
+  const permissionsReady = isSuperAdmin || query.isSuccess || query.isError;
 
   return {
     ...query,
+    isLoading:
+      status === "loading" ||
+      (!isSuperAdmin && query.isLoading && !permissionsReady),
+    permissionsReady,
     permissions,
     roleCodes,
-    isSuperAdmin: query.data?.isSuperAdmin ?? false,
-    globalRead: query.data?.globalRead ?? false,
+    isSuperAdmin,
+    globalRead: query.data?.globalRead ?? Boolean(session?.user?.globalRead),
     can: (code: string | string[]) => {
-      if (query.data?.isSuperAdmin) return true;
+      if (isSuperAdmin) return true;
+      if (!query.data) return false;
       const codes = Array.isArray(code) ? code : [code];
       return codes.some((c) => permissions.has(c));
     },
@@ -35,9 +49,9 @@ export function usePermissions() {
 
 /** Client-side UI guard. Never rely on this alone — services enforce AuthZ. */
 export function Can({ permission, role, fallback = null, children }: CanProps) {
-  const { can, hasRole, isLoading } = usePermissions();
+  const { can, hasRole, isLoading, isSuperAdmin } = usePermissions();
 
-  if (isLoading) return null;
+  if (isLoading && !isSuperAdmin) return null;
 
   const allowedPermission = permission ? can(permission) : true;
   const allowedRole = role ? hasRole(role) : true;

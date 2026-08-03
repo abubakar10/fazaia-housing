@@ -44,5 +44,5 @@ export class TtlCache<T> {
   }
 }
 
-/** Default permission cache TTL: 60 seconds. */
-export const permissionCache = new TtlCache<unknown>(60_000);
+/** Default permission cache TTL: 5 minutes. */
+export const permissionCache = new TtlCache<unknown>(5 * 60_000);

@@ -58,7 +58,7 @@ const ICONS = {
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
-  const { can, isSuperAdmin, isLoading } = usePermissions();
+  const { can, isSuperAdmin, isLoading, permissionsReady } = usePermissions();
 
   return (
     <nav className="flex flex-col gap-1 p-3" aria-label="Primary">
@@ -68,13 +68,16 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
           pathname === item.href ||
           (item.href !== "/" && pathname.startsWith(item.href));
         const disabled = "disabled" in item && item.disabled;
+        const needsPermission =
+          "permission" in item && !!item.permission && !isSuperAdmin;
         const permitted =
           isSuperAdmin ||
           !("permission" in item) ||
           !item.permission ||
           can(item.permission);
 
-        if (isLoading) {
+        // Keep layout stable: skeleton only items that need permission codes.
+        if (isLoading && needsPermission && !permissionsReady) {
           return (
             <div
               key={item.href}
@@ -112,6 +115,7 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
                 ? "bg-sidebar-accent text-sidebar-accent-foreground"
                 : "text-sidebar-foreground/80 hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground",
             )}
+            prefetch
           >
             <Icon className="size-4 shrink-0" />
             {item.title}

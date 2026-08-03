@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { APP_NAME } from "@/lib/constants";
 import { loginSchema, type LoginInput } from "@/features/auth/schemas/auth.schemas";
-import { useLogin } from "@/features/auth/hooks/use-auth";
+import { useAuth, useLogin } from "@/features/auth/hooks/use-auth";
 import { TextField } from "@/components/forms";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,8 +20,10 @@ import {
 } from "@/components/ui/card";
 
 export function LoginForm() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/";
+  const { update } = useAuth();
   const { login, isPending, error, setError } = useLogin();
 
   const form = useForm<LoginInput>({
@@ -34,8 +36,9 @@ export function LoginForm() {
     const result = await login(values);
     if (!result.ok) return;
     toast.success("Signed in successfully");
-    // Hard navigation avoids a slow RSC refresh waterfall after credentials sign-in.
-    window.location.assign(callbackUrl);
+    // Refresh client session once (cookie already set by signIn). Avoid router.refresh RSC storm.
+    await update();
+    router.replace(callbackUrl);
   }
 
   return (

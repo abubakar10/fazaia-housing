@@ -8,6 +8,9 @@ declare module "next-auth" {
       name: string;
       status: string;
       avatarUrl?: string | null;
+      roleCodes: string[];
+      isSuperAdmin: boolean;
+      globalRead: boolean;
     } & DefaultSession["user"];
   }
 
@@ -17,6 +20,9 @@ declare module "next-auth" {
     name: string;
     status: string;
     avatarUrl?: string | null;
+    roleCodes?: string[];
+    isSuperAdmin?: boolean;
+    globalRead?: boolean;
   }
 }
 
@@ -27,6 +33,9 @@ declare module "next-auth/jwt" {
     name: string;
     status: string;
     avatarUrl?: string | null;
+    roleCodes?: string[];
+    isSuperAdmin?: boolean;
+    globalRead?: boolean;
   }
 }
 

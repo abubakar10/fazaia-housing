@@ -4,6 +4,7 @@ export {
   resolveEffectivePermissionCodes,
   userHasPermission,
   invalidateUserPermissionCache,
+  getCachedAccessBundle,
 } from "./services/access.service";
 export * from "./schemas/rbac.schemas";
 export type { RoleDto, PermissionDto } from "./mappers";

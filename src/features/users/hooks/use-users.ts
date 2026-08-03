@@ -81,6 +81,7 @@ export function useUsersQuery(params: ListParams) {
       return payload as ListResponse;
     },
     placeholderData: keepPreviousData,
+    staleTime: 60_000,
   });
 }
 
@@ -89,6 +90,7 @@ export function useUserQuery(id: string) {
     queryKey: userKeys.detail(id),
     queryFn: () => api<UserDto>(`/api/v1/users/${id}`),
     enabled: !!id,
+    staleTime: 60_000,
   });
 }
 
@@ -112,6 +114,7 @@ export function useLinkOptionsQuery() {
           primaryUserId: string | null;
         }>;
       }>("/api/v1/users/link-options"),
+    staleTime: 5 * 60_000,
   });
 }
 
@@ -161,6 +164,7 @@ export function useMeQuery() {
   return useQuery({
     queryKey: [...USERS_ROOT, "me"] as const,
     queryFn: () => api<UserDto>("/api/v1/me"),
+    staleTime: 60_000,
   });
 }
 

@@ -75,7 +75,8 @@ export function useMyPermissionsQuery() {
   return useQuery({
     queryKey: rbacKeys.me,
     queryFn: () => api<MyPermissions>("/api/v1/me/permissions"),
-    staleTime: 30_000,
+    staleTime: 10 * 60_000,
+    gcTime: 30 * 60_000,
   });
 }
 
@@ -112,6 +113,7 @@ export function useAllPermissionsQuery() {
   return useQuery({
     queryKey: rbacKeys.allPermissions,
     queryFn: () => api<PermissionDto[]>("/api/v1/permissions?all=1"),
+    staleTime: 10 * 60_000,
   });
 }
 

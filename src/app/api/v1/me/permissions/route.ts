@@ -1,25 +1,36 @@
 import { ok } from "@/lib/http";
 import { handleApiError } from "@/lib/http/api-handler";
-import { requireUser } from "@/features/auth";
+import { requireSessionActor } from "@/features/auth/services/session.service";
+import { ALL_PERMISSION_CODES } from "@/domain/policies/permissions";
 import {
-  resolveEffectivePermissionCodes,
-  resolveVisibilityContext,
+  getCachedAccessBundle,
 } from "@/features/rbac/services/access.service";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const actor = await requireUser();
-    const [permissions, ctx] = await Promise.all([
-      resolveEffectivePermissionCodes(actor.id),
-      resolveVisibilityContext(actor.id),
-    ]);
+    const actor = await requireSessionActor();
+
+    if (actor.isSuperAdmin) {
+      return ok({
+        permissions: ALL_PERMISSION_CODES,
+        roleCodes: actor.roleCodes,
+        globalRead: true,
+        isSuperAdmin: true,
+        projectIds: [] as string[],
+        orgUnitIds: [] as string[],
+        contractorId: null as string | null,
+      });
+    }
+
+    const cached = await getCachedAccessBundle(actor.id);
+    const ctx = cached?.ctx;
 
     return ok({
-      permissions: [...permissions].sort(),
-      roleCodes: ctx?.roleCodes ?? [],
-      globalRead: ctx?.globalRead ?? false,
+      permissions: [...(ctx?.permissions ?? new Set<string>())].sort(),
+      roleCodes: ctx?.roleCodes ?? actor.roleCodes,
+      globalRead: ctx?.globalRead ?? actor.globalRead,
       isSuperAdmin: ctx?.isSuperAdmin ?? false,
       projectIds: ctx?.projectIds ?? [],
       orgUnitIds: ctx?.orgUnitIds ?? [],

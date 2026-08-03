@@ -264,7 +264,7 @@ export async function countSuperAdmins() {
 }
 
 export async function loadAccessGraph(userId: string) {
-  const [user, userRoles, overrides] = await Promise.all([
+  const [user, roleRows, overrides] = await Promise.all([
     prisma.user.findFirst({
       where: { id: userId, deletedAt: null },
       select: {
@@ -276,10 +276,26 @@ export async function loadAccessGraph(userId: string) {
     }),
     prisma.userRole.findMany({
       where: { userId },
-      include: {
+      select: {
+        id: true,
+        userId: true,
+        roleId: true,
+        scopeType: true,
+        orgUnitId: true,
+        projectId: true,
+        assignedAt: true,
+        assignedBy: true,
         role: {
-          include: {
-            permissions: { include: { permission: true } },
+          select: {
+            id: true,
+            code: true,
+            name: true,
+            description: true,
+            isSystem: true,
+            globalRead: true,
+            createdAt: true,
+            updatedAt: true,
+            deletedAt: true,
           },
         },
       },
@@ -290,5 +306,68 @@ export async function loadAccessGraph(userId: string) {
     }),
   ]);
 
-  return { user, userRoles, overrides };
+  const isSuperAdmin = roleRows.some((row) => row.role.code === "SUPER_ADMIN");
+
+  // Super Admin never needs the full RolePermission join (137+ rows over Neon).
+  if (isSuperAdmin) {
+    return {
+      user,
+      userRoles: roleRows.map((row) => ({
+        ...row,
+        role: { ...row.role, permissions: [] as Array<{
+          roleId: string;
+          permissionId: string;
+          permission: {
+            id: string;
+            code: string;
+            module: string;
+            action: string;
+            description: string | null;
+            createdAt: Date;
+          };
+        }> },
+      })),
+      overrides,
+    };
+  }
+
+  const roleIds = roleRows.map((row) => row.roleId);
+  const rolePermissions = roleIds.length
+    ? await prisma.rolePermission.findMany({
+        where: { roleId: { in: roleIds } },
+        select: {
+          roleId: true,
+          permissionId: true,
+          permission: {
+            select: {
+              id: true,
+              code: true,
+              module: true,
+              action: true,
+              description: true,
+              createdAt: true,
+            },
+          },
+        },
+      })
+    : [];
+
+  const permissionsByRole = new Map<string, typeof rolePermissions>();
+  for (const rp of rolePermissions) {
+    const list = permissionsByRole.get(rp.roleId) ?? [];
+    list.push(rp);
+    permissionsByRole.set(rp.roleId, list);
+  }
+
+  return {
+    user,
+    userRoles: roleRows.map((row) => ({
+      ...row,
+      role: {
+        ...row.role,
+        permissions: permissionsByRole.get(row.roleId) ?? [],
+      },
+    })),
+    overrides,
+  };
 }

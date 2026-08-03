@@ -51,7 +51,7 @@ export function CreateOrgUnitDialog({
   defaultParentId = null,
 }: Props) {
   const createMutation = useCreateOrgUnitMutation();
-  const treeQuery = useOrgTreeQuery();
+  const treeQuery = useOrgTreeQuery({ enabled: open });
 
   const form = useForm<FormInput, unknown, FormValues>({
     resolver: zodResolver(formSchema),
