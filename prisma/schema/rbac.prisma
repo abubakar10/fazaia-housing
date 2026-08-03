@@ -1,0 +1,100 @@
+// Module 3 — Roles & Permissions (RBAC)
+
+enum PermissionEffect {
+  ALLOW
+  DENY
+}
+
+enum PermissionScope {
+  GLOBAL
+  ORGANIZATION
+  PROJECT
+}
+
+model Role {
+  id          String    @id @default(uuid()) @db.Uuid
+  code        String    @unique
+  name        String
+  description String?
+  isSystem    Boolean   @default(false)
+  /// When true, user can read across projects/orgs without membership (ADH / Super Admin).
+  globalRead  Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  permissions RolePermission[]
+  users       UserRole[]
+
+  @@index([deletedAt])
+  @@index([isSystem])
+}
+
+model Permission {
+  id          String   @id @default(uuid()) @db.Uuid
+  code        String   @unique
+  module      String
+  action      String
+  description String?
+  createdAt   DateTime @default(now())
+
+  roles       RolePermission[]
+  userGrants  UserPermission[]
+
+  @@index([module])
+}
+
+model RolePermission {
+  roleId       String @db.Uuid
+  permissionId String @db.Uuid
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@index([permissionId])
+}
+
+/// Role assignment — optionally scoped to an organization or project.
+model UserRole {
+  id         String          @id @default(uuid()) @db.Uuid
+  userId     String          @db.Uuid
+  roleId     String          @db.Uuid
+  scopeType  PermissionScope @default(GLOBAL)
+  orgUnitId  String?         @db.Uuid
+  projectId  String?         @db.Uuid
+  assignedAt DateTime        @default(now())
+  assignedBy String?         @db.Uuid
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@index([userId, roleId, scopeType])
+  @@index([userId])
+  @@index([roleId])
+  @@index([projectId])
+  @@index([orgUnitId])
+}
+
+/// Per-user permission overrides. DENY always wins over ALLOW.
+model UserPermission {
+  id           String           @id @default(uuid()) @db.Uuid
+  userId       String           @db.Uuid
+  permissionId String           @db.Uuid
+  effect       PermissionEffect
+  scopeType    PermissionScope  @default(GLOBAL)
+  orgUnitId    String?          @db.Uuid
+  projectId    String?          @db.Uuid
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  createdById  String?          @db.Uuid
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@index([userId, permissionId, effect, scopeType])
+  @@index([userId])
+  @@index([permissionId])
+  @@index([projectId])
+  @@index([orgUnitId])
+}

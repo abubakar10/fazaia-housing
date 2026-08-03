@@ -8,10 +8,15 @@ import {
   FileBarChart,
   Inbox,
   LayoutDashboard,
+  LogOut,
   Menu,
+  Network,
   Receipt,
   Search,
   Settings,
+  Shield,
+  UserRound,
+  Users,
   Warehouse,
 } from "lucide-react";
 import { APP_NAME, NAV_ITEMS } from "@/lib/constants";
@@ -25,11 +30,24 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { useAuth, useLogout } from "@/features/auth/hooks/use-auth";
+import { usePermissions } from "@/features/rbac/components/can";
 
 const ICONS = {
   LayoutDashboard,
+  Users,
+  Shield,
+  Network,
   Building2,
   Warehouse,
   Receipt,
@@ -40,13 +58,32 @@ const ICONS = {
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
+  const { can, isSuperAdmin, isLoading } = usePermissions();
 
   return (
     <nav className="flex flex-col gap-1 p-3" aria-label="Primary">
       {NAV_ITEMS.map((item) => {
         const Icon = ICONS[item.icon];
-        const active = pathname === item.href;
+        const active =
+          pathname === item.href ||
+          (item.href !== "/" && pathname.startsWith(item.href));
         const disabled = "disabled" in item && item.disabled;
+        const permitted =
+          isSuperAdmin ||
+          !("permission" in item) ||
+          !item.permission ||
+          can(item.permission);
+
+        if (isLoading) {
+          return (
+            <div
+              key={item.href}
+              className="h-11 animate-pulse rounded-xl bg-sidebar-accent/40"
+            />
+          );
+        }
+
+        if (!permitted) return null;
 
         if (disabled) {
           return (
@@ -142,6 +179,16 @@ export function MobileSidebar() {
 }
 
 export function AppTopbar() {
+  const { user, isLoading } = useAuth();
+  const { logout, isPending } = useLogout();
+  const initials =
+    user?.name
+      ?.split(" ")
+      .map((part) => part[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "FH";
+
   return (
     <header className="sticky top-0 z-30 flex min-h-16 items-center gap-3 border-b border-border/70 bg-background/80 px-4 backdrop-blur-xl sm:px-6">
       <MobileSidebar />
@@ -170,11 +217,48 @@ export function AppTopbar() {
           <Inbox className="size-4" />
           <span className="sr-only">Inbox</span>
         </Button>
-        <Avatar className="size-9 border border-border">
-          <AvatarFallback className="bg-muted text-xs font-medium">
-            FH
-          </AvatarFallback>
-        </Avatar>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              className="min-h-11 gap-2 rounded-full px-1.5 sm:px-2"
+              disabled={isLoading}
+            >
+              <Avatar className="size-9 border border-border">
+                <AvatarFallback className="bg-muted text-xs font-medium">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+              <span className="hidden max-w-[10rem] truncate text-sm font-medium sm:inline">
+                {user?.name ?? "Account"}
+              </span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuLabel className="space-y-1">
+              <p className="truncate text-sm font-medium">{user?.name}</p>
+              <p className="truncate text-xs font-normal text-muted-foreground">
+                {user?.email}
+              </p>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild className="min-h-11 cursor-pointer">
+              <Link href="/settings/profile">
+                <UserRound className="size-4" />
+                My profile
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              disabled={isPending}
+              onClick={() => logout()}
+              className="min-h-11 cursor-pointer"
+            >
+              <LogOut className="size-4" />
+              {isPending ? "Signing out…" : "Sign out"}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </header>
   );

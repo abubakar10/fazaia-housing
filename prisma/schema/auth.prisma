@@ -16,19 +16,28 @@ model User {
   phone         String?
   avatarUrl     String?
   status        UserStatus @default(INVITED)
-  orgUnitId     String?    @db.Uuid
-  lastLoginAt   DateTime?
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
-  deletedAt     DateTime?
-  createdById   String?    @db.Uuid
-  updatedById   String?    @db.Uuid
+  orgUnitId           String?    @db.Uuid
+  lastLoginAt         DateTime?
+  failedLoginAttempts Int        @default(0)
+  lockedUntil         DateTime?
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+  deletedAt           DateTime?
+  createdById         String?    @db.Uuid
+  updatedById         String?    @db.Uuid
 
-  accounts Account[]
-  sessions Session[]
+  orgUnit        OrgUnit?    @relation(fields: [orgUnitId], references: [id])
+  accounts       Account[]
+  sessions       Session[]
+  employee       Employee?
+  contractorUser Contractor? @relation("ContractorPrimaryUser")
+  roles          UserRole[]
+  permissions    UserPermission[]
 
   @@index([status, deletedAt])
-  @@index([orgUnitId])
+  @@index([orgUnitId, status])
+  @@index([lockedUntil])
+  @@index([name])
 }
 
 model Account {

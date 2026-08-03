@@ -1,56 +1,48 @@
-import Link from "next/link";
-import { ArrowRight, Boxes, ShieldCheck, Workflow } from "lucide-react";
+import { ShieldCheck, KeyRound, Workflow } from "lucide-react";
 import { PageHeader, PageMotion } from "@/components/layout";
 import { EmptyState } from "@/components/feedback";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { getCurrentUser } from "@/features/auth";
 
-export default function DashboardHomePage() {
+export default async function DashboardHomePage() {
+  const user = await getCurrentUser();
+
   return (
     <PageMotion className="space-y-8">
       <PageHeader
-        title="Foundation ready"
-        description="Module 0 is live: design system, app shell, shared kits, Prisma baselines, and health checks. Authentication starts in Module 1."
-        actions={
-          <Button asChild className="min-h-11">
-            <Link href="/login">
-              Open auth shell
-              <ArrowRight className="size-4" />
-            </Link>
-          </Button>
-        }
+        title={`Welcome${user?.name ? `, ${user.name}` : ""}`}
+        description="Module 1 authentication is active. Sessions are protected with Auth.js, Argon2 password hashing, and audit logging."
       />
 
       <section className="relative overflow-hidden rounded-3xl border border-border/70 bg-card/70 p-6 shadow-soft sm:p-8">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgb(20_95_70_/0.12),transparent_45%),radial-gradient(circle_at_bottom_left,rgb(210_40_40_/0.08),transparent_40%)]" />
         <div className="relative grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
           <div className="space-y-4">
-            <Badge variant="secondary">Module 0 · Foundation</Badge>
+            <Badge variant="secondary">Module 1 · Authentication</Badge>
             <h2 className="font-display text-2xl font-semibold tracking-tight sm:text-3xl">
-              FAZIA Housing ERP shell
+              Secure access layer ready
             </h2>
             <p className="max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-[15px]">
-              Premium light-theme operating surface for construction delivery.
-              Business modules are intentionally gated until their roadmap
-              phase begins.
+              Signed in as <span className="font-medium text-foreground">{user?.email}</span>.
+              User management and RBAC arrive in Modules 2–3.
             </p>
           </div>
           <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
             {[
               {
-                icon: Boxes,
-                title: "Shared kits",
-                body: "Forms, DataTable, feedback states",
+                icon: KeyRound,
+                title: "Credentials + Argon2",
+                body: "Login, lockout, password reset",
               },
               {
                 icon: ShieldCheck,
-                title: "Platform baselines",
-                body: "User, AuditLog, Idempotency, Flags",
+                title: "Protected routes",
+                body: "Middleware + secure cookies",
               },
               {
                 icon: Workflow,
-                title: "Clean boundaries",
-                body: "UI → services → repositories later",
+                title: "Audit trail",
+                body: "Login, logout, reset events",
               },
             ].map((item) => (
               <div
@@ -67,8 +59,8 @@ export default function DashboardHomePage() {
       </section>
 
       <EmptyState
-        title="No operational data yet"
-        description="Projects, store, billing, and inbox activate in later modules. This empty state verifies the shared feedback contract."
+        title="Business modules still gated"
+        description="Projects, store, billing, and inbox remain disabled until their roadmap modules begin."
       />
     </PageMotion>
   );

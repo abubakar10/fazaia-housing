@@ -1,2 +1,42 @@
-// Placeholder — Organization models land in Module 4.
-// File reserved to match frozen architecture folder layout.
+// Module 4 — Organization Hierarchy
+
+enum OrgUnitType {
+  HQ
+  REGION
+  DIVISION
+  SITE
+  OFFICE
+  STORE
+  FINANCE
+  OTHER
+}
+
+enum OrgUnitStatus {
+  ACTIVE
+  INACTIVE
+}
+
+model OrgUnit {
+  id          String        @id @default(uuid()) @db.Uuid
+  parentId    String?       @db.Uuid
+  code        String        @unique
+  name        String
+  type        OrgUnitType
+  status      OrgUnitStatus @default(ACTIVE)
+  /// Sibling order within a parent — reserved for future drag-and-drop reorder.
+  sortOrder   Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  deletedAt   DateTime?
+  createdById String?       @db.Uuid
+  updatedById String?       @db.Uuid
+
+  parent   OrgUnit?  @relation("OrgTree", fields: [parentId], references: [id])
+  children OrgUnit[] @relation("OrgTree")
+  users    User[]
+
+  @@index([parentId, sortOrder])
+  @@index([status, deletedAt])
+  @@index([type])
+  @@index([name])
+}

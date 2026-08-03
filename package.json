@@ -13,13 +13,21 @@
     "db:migrate": "prisma migrate dev --schema=prisma/schema",
     "db:migrate:deploy": "prisma migrate deploy --schema=prisma/schema",
     "db:studio": "prisma studio --schema=prisma/schema",
-    "db:validate": "prisma validate --schema=prisma/schema"
+    "db:validate": "prisma validate --schema=prisma/schema",
+    "db:seed:auth": "tsx prisma/seed/auth-bootstrap.ts",
+    "db:seed:workforce": "tsx prisma/seed/workforce-links.ts",
+    "db:seed:rbac": "tsx prisma/seed/rbac.ts",
+    "db:seed:organization": "tsx prisma/seed/organization.ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "prisma": {
     "schema": "prisma/schema"
   },
   "dependencies": {
+    "@auth/prisma-adapter": "^2.11.3",
     "@hookform/resolvers": "^5.7.1",
+    "@node-rs/argon2": "^2.0.2",
     "@prisma/client": "^6.19.3",
     "@tanstack/react-query": "^5.101.4",
     "@tanstack/react-table": "^8.21.3",
@@ -30,11 +38,13 @@
     "framer-motion": "^12.43.0",
     "lucide-react": "^1.28.0",
     "next": "15.5.22",
+    "next-auth": "5.0.0-beta.32",
     "next-themes": "^0.4.6",
     "radix-ui": "^1.6.7",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-hook-form": "^7.84.0",
+    "resend": "^6.18.1",
     "shadcn": "^4.16.1",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.6.0",
@@ -51,7 +61,9 @@
     "eslint-config-next": "15.5.22",
     "prisma": "^6.19.3",
     "tailwindcss": "^4",
+    "tsx": "^4.23.5",
     "tw-animate-css": "^1.4.0",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.10"
   }
 }

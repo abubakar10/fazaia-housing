@@ -15,5 +15,9 @@
 
 ## Implementation status
 
-- **Module 0 — Foundation: COMPLETE**
-- Module 1+ — waiting for explicit approval
+- **Module 0 — Foundation: COMPLETE (frozen)**
+- **Module 1 — Authentication: COMPLETE (frozen)**
+- **Module 2 — User Management: COMPLETE (frozen)**
+- **Module 3 — Roles & Permissions (RBAC): COMPLETE (frozen)**
+- **Module 4 — Organization Hierarchy: COMPLETE**
+- Module 5+ — waiting for explicit approval
