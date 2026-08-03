@@ -183,7 +183,7 @@ export function MobileSidebar() {
 }
 
 export function AppTopbar() {
-  const { user, isLoading } = useAuth();
+  const { user } = useAuth();
   const { logout, isPending } = useLogout();
   const initials =
     user?.name
@@ -205,19 +205,29 @@ export function AppTopbar() {
         </kbd>
       </div>
 
-      <div className="ml-auto flex items-center gap-2">
+      <div className="relative z-40 ml-auto flex shrink-0 items-center gap-2">
         <Button
           variant="outline"
-          className="hidden min-h-11 sm:inline-flex"
+          className="hidden min-h-11 lg:inline-flex"
           disabled
         >
           Project context
         </Button>
-        <Button variant="ghost" size="icon" className="relative min-h-11 min-w-11" disabled>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="relative hidden min-h-11 min-w-11 sm:inline-flex"
+          disabled
+        >
           <Bell className="size-4" />
           <span className="sr-only">Notifications</span>
         </Button>
-        <Button variant="ghost" size="icon" className="min-h-11 min-w-11" disabled>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="hidden min-h-11 min-w-11 sm:inline-flex"
+          disabled
+        >
           <Inbox className="size-4" />
           <span className="sr-only">Inbox</span>
         </Button>
@@ -226,8 +236,7 @@ export function AppTopbar() {
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
-              className="min-h-11 gap-2 rounded-full px-1.5 sm:px-2"
-              disabled={isLoading}
+              className="min-h-11 shrink-0 gap-2 rounded-full px-1.5 sm:px-2"
             >
               <Avatar className="size-9 border border-border">
                 <AvatarFallback className="bg-muted text-xs font-medium">

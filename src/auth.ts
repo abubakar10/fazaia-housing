@@ -43,33 +43,10 @@ function getAuthSecret() {
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   // JWT credentials auth does not need PrismaAdapter (avoids extra DB round-trips).
+  // Cookie names/secure flags must stay Auth.js defaults so middleware (authConfig)
+  // and Node handlers agree — forcing __Secure__/__Host__ under NODE_ENV=production
+  // breaks http://localhost (pnpm start) session, nav permissions, and sign-out.
   secret: getAuthSecret(),
-  cookies: {
-    sessionToken: {
-      name:
-        process.env.NODE_ENV === "production"
-          ? "__Secure-authjs.session-token"
-          : "authjs.session-token",
-      options: {
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-        secure: process.env.NODE_ENV === "production",
-      },
-    },
-    csrfToken: {
-      name:
-        process.env.NODE_ENV === "production"
-          ? "__Host-authjs.csrf-token"
-          : "authjs.csrf-token",
-      options: {
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-        secure: process.env.NODE_ENV === "production",
-      },
-    },
-  },
   providers: [
     Credentials({
       name: "credentials",

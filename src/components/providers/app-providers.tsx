@@ -33,7 +33,7 @@ export function AppProviders({ children, session }: AppProvidersProps) {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider delayDuration={200}>
           {children}
-          <Toaster richColors closeButton position="top-right" />
+          <Toaster richColors closeButton position="bottom-right" />
         </TooltipProvider>
       </QueryClientProvider>
     </AuthSessionProvider>

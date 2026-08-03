@@ -71,12 +71,13 @@ export type MyPermissions = {
   contractorId: string | null;
 };
 
-export function useMyPermissionsQuery() {
+export function useMyPermissionsQuery(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: rbacKeys.me,
     queryFn: () => api<MyPermissions>("/api/v1/me/permissions"),
     staleTime: 10 * 60_000,
     gcTime: 30 * 60_000,
+    enabled: options?.enabled ?? true,
   });
 }
 

@@ -13,7 +13,10 @@ type CanProps = {
 
 export function usePermissions() {
   const { data: session, status } = useSession();
-  const query = useMyPermissionsQuery();
+  const sessionReady = status !== "loading";
+  const query = useMyPermissionsQuery({
+    enabled: status === "authenticated",
+  });
   const jwtSuperAdmin = Boolean(session?.user?.isSuperAdmin);
   const jwtRoleCodes = session?.user?.roleCodes ?? [];
   const permissions = new Set(query.data?.permissions ?? []);
@@ -21,14 +24,21 @@ export function usePermissions() {
   const isSuperAdmin = query.data?.isSuperAdmin ?? jwtSuperAdmin;
 
   // Super Admin can render immediately from JWT.
-  // Everyone else waits for the permission catalog (or uses JWT roles only for role checks).
-  const permissionsReady = isSuperAdmin || query.isSuccess || query.isError;
+  // Everyone else waits for the permission catalog once the session is known.
+  const permissionsReady =
+    isSuperAdmin ||
+    (sessionReady && status !== "authenticated") ||
+    query.isSuccess ||
+    query.isError;
 
   return {
     ...query,
     isLoading:
-      status === "loading" ||
-      (!isSuperAdmin && query.isLoading && !permissionsReady),
+      !sessionReady ||
+      (status === "authenticated" &&
+        !isSuperAdmin &&
+        query.isLoading &&
+        !permissionsReady),
     permissionsReady,
     permissions,
     roleCodes,
