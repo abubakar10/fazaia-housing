@@ -39,7 +39,6 @@ export const NAV_ITEMS = [
     href: "/projects",
     icon: "Building2",
     permission: "projects.read",
-    disabled: true,
   },
   {
     title: "Store",

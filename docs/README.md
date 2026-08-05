@@ -20,4 +20,6 @@
 - **Module 2 — User Management: COMPLETE (frozen)**
 - **Module 3 — Roles & Permissions (RBAC): COMPLETE (frozen)**
 - **Module 4 — Organization Hierarchy: COMPLETE**
-- Module 5+ — waiting for explicit approval
+- **Module 5 — Project Management: COMPLETE**
+- **Module 6 — Project Structure (Phases, Sectors & Blocks): COMPLETE**
+- Module 7+ — waiting for explicit approval

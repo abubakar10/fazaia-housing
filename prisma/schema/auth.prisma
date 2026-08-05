@@ -33,6 +33,9 @@ model User {
   contractorUser Contractor? @relation("ContractorPrimaryUser")
   roles          UserRole[]
   permissions    UserPermission[]
+  projectMembers ProjectMember[]
+  managedProjects Project[]         @relation("ProjectManager")
+  projectContext UserProjectContext?
 
   @@index([status, deletedAt])
   @@index([orgUnitId, status])

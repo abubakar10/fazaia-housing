@@ -65,7 +65,7 @@ export default function DashboardHomePage() {
 
       <EmptyState
         title="Business modules still gated"
-        description="Projects, store, billing, and inbox remain disabled until their roadmap modules begin."
+        description="Phases, store, billing, and inbox remain disabled until their roadmap modules begin."
       />
     </PageMotion>
   );

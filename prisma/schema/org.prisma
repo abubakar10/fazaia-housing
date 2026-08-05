@@ -34,6 +34,7 @@ model OrgUnit {
   parent   OrgUnit?  @relation("OrgTree", fields: [parentId], references: [id])
   children OrgUnit[] @relation("OrgTree")
   users    User[]
+  projects Project[]
 
   @@index([parentId, sortOrder])
   @@index([status, deletedAt])

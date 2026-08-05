@@ -19,6 +19,8 @@ model Contractor {
   updatedById    String?   @db.Uuid
 
   primaryUser User? @relation("ContractorPrimaryUser", fields: [primaryUserId], references: [id])
+  projectMembers ProjectMember[]
+  mainContractorProjects Project[]
 
   @@index([deletedAt])
   @@index([name])
@@ -41,6 +43,7 @@ model Employee {
   updatedById String?   @db.Uuid
 
   user User? @relation(fields: [userId], references: [id])
+  projectMembers ProjectMember[]
 
   @@index([deletedAt])
   @@index([name])

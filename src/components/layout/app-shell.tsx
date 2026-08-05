@@ -41,6 +41,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { useAuth, useLogout } from "@/features/auth/hooks/use-auth";
+import { ProjectContextSwitcher } from "@/features/projects/components/project-context-switcher";
 import { usePermissions } from "@/features/rbac/components/can";
 
 const ICONS = {
@@ -206,13 +207,7 @@ export function AppTopbar() {
       </div>
 
       <div className="relative z-40 ml-auto flex shrink-0 items-center gap-2">
-        <Button
-          variant="outline"
-          className="hidden min-h-11 lg:inline-flex"
-          disabled
-        >
-          Project context
-        </Button>
+        <ProjectContextSwitcher />
         <Button
           variant="ghost"
           size="icon"

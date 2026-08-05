@@ -7,6 +7,7 @@ type AuditInput = {
   action: string;
   entityType?: string;
   entityId?: string | null;
+  projectId?: string | null;
   ip?: string | null;
   userAgent?: string | null;
   requestId?: string | null;
@@ -22,6 +23,7 @@ export async function writeAuditLog(input: AuditInput) {
       action: input.action,
       entityType: input.entityType ?? "User",
       entityId: input.entityId ?? null,
+      projectId: input.projectId ?? null,
       ip: input.ip ?? null,
       userAgent: input.userAgent ?? null,
       requestId: input.requestId ?? null,

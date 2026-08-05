@@ -25,6 +25,7 @@ model Role {
 
   permissions RolePermission[]
   users       UserRole[]
+  projectMembers ProjectMember[]
 
   @@index([deletedAt])
   @@index([isSystem])

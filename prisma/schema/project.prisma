@@ -1,1 +1,216 @@
-// Placeholder — Project structure models land in Modules 5–7.
+// Module 5 — Project Management (refinement)
+
+enum ProjectStatus {
+  DRAFT
+  ACTIVE
+  ON_HOLD
+  COMPLETED
+  ARCHIVED
+}
+
+enum ProjectType {
+  RESIDENTIAL
+  COMMERCIAL
+  MIXED_USE
+  INFRASTRUCTURE
+  RENOVATION
+  OTHER
+}
+
+enum ProjectPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+model Project {
+  id                 String           @id @default(uuid()) @db.Uuid
+  code               String           @unique
+  name               String
+  description        String?
+  location           String?
+  status             ProjectStatus    @default(DRAFT)
+  statusBeforeArchive ProjectStatus?
+  projectType        ProjectType      @default(RESIDENTIAL)
+  projectPriority    ProjectPriority  @default(MEDIUM)
+  clientOwner        String?
+  consultant         String?
+  mainContractorId   String?          @db.Uuid
+  fiscalYear         Int?
+  gpsLatitude        Decimal?         @db.Decimal(10, 7)
+  gpsLongitude       Decimal?         @db.Decimal(10, 7)
+  logoUrl            String?
+  internalNotes      String?          @db.Text
+  startDate          DateTime?
+  expectedEndDate    DateTime?
+  actualEndDate      DateTime?
+  orgUnitId          String?          @db.Uuid
+  projectManagerId   String?          @db.Uuid
+  currencyCode       String           @default("PKR")
+  timezone           String           @default("Asia/Karachi")
+  /// Placeholder for Module 15 warehouse assignment — no FK until Warehouse exists.
+  defaultWarehouseId String?          @db.Uuid
+  settings           Json?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  deletedAt          DateTime?
+  createdById        String?          @db.Uuid
+  updatedById        String?          @db.Uuid
+
+  orgUnit          OrgUnit?            @relation(fields: [orgUnitId], references: [id])
+  projectManager   User?               @relation("ProjectManager", fields: [projectManagerId], references: [id])
+  mainContractor   Contractor?         @relation(fields: [mainContractorId], references: [id])
+  members          ProjectMember[]
+  contextUsers     UserProjectContext[]
+  phases           Phase[]
+  sectors          Sector[]
+  blocks           Block[]
+
+  @@index([status, deletedAt])
+  @@index([orgUnitId, deletedAt])
+  @@index([projectManagerId])
+  @@index([mainContractorId])
+  @@index([projectType])
+  @@index([projectPriority])
+  @@index([fiscalYear])
+  @@index([name])
+  @@index([code])
+  @@index([createdAt])
+}
+
+model ProjectMember {
+  id           String    @id @default(uuid()) @db.Uuid
+  projectId    String    @db.Uuid
+  userId       String    @db.Uuid
+  employeeId   String?   @db.Uuid
+  contractorId String?   @db.Uuid
+  roleId       String?   @db.Uuid
+  roleHint     String?
+  createdAt    DateTime  @default(now())
+  deletedAt    DateTime?
+  createdById  String?   @db.Uuid
+
+  project    Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  employee   Employee?   @relation(fields: [employeeId], references: [id])
+  contractor Contractor? @relation(fields: [contractorId], references: [id])
+  role       Role?       @relation(fields: [roleId], references: [id])
+
+  @@unique([projectId, userId])
+  @@index([userId])
+  @@index([projectId, deletedAt])
+  @@index([employeeId])
+  @@index([contractorId])
+  @@index([roleId])
+  @@index([createdAt])
+}
+
+/// Per-user active project selection (server-side context).
+model UserProjectContext {
+  userId    String   @id @db.Uuid
+  projectId String?  @db.Uuid
+  updatedAt DateTime @updatedAt
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project Project? @relation(fields: [projectId], references: [id])
+
+  @@index([projectId])
+}
+
+/// Module 6 — Project structure hierarchy status.
+enum StructureStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+model Phase {
+  id                  String          @id @default(uuid()) @db.Uuid
+  projectId           String          @db.Uuid
+  code                String
+  name                String
+  description         String?
+  status              StructureStatus @default(ACTIVE)
+  statusBeforeArchive StructureStatus?
+  sortOrder           Int             @default(0)
+  version             Int             @default(1)
+  startDate           DateTime?
+  endDate             DateTime?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  deletedAt           DateTime?
+  createdById         String?         @db.Uuid
+  updatedById         String?         @db.Uuid
+
+  project Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sectors Sector[]
+
+  @@unique([projectId, code])
+  @@index([projectId, deletedAt])
+  @@index([projectId, status, deletedAt])
+  @@index([projectId, sortOrder])
+  @@index([status])
+  @@index([name])
+  @@index([createdAt])
+}
+
+model Sector {
+  id                  String          @id @default(uuid()) @db.Uuid
+  phaseId             String          @db.Uuid
+  projectId           String          @db.Uuid
+  code                String
+  name                String
+  description         String?
+  status              StructureStatus @default(ACTIVE)
+  statusBeforeArchive StructureStatus?
+  sortOrder           Int             @default(0)
+  version             Int             @default(1)
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  deletedAt           DateTime?
+  createdById         String?         @db.Uuid
+  updatedById         String?         @db.Uuid
+
+  phase   Phase   @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  blocks  Block[]
+
+  @@unique([phaseId, code])
+  @@index([projectId, deletedAt])
+  @@index([phaseId, deletedAt])
+  @@index([projectId, status, deletedAt])
+  @@index([phaseId, sortOrder])
+  @@index([status])
+  @@index([name])
+  @@index([createdAt])
+}
+
+model Block {
+  id                  String          @id @default(uuid()) @db.Uuid
+  sectorId            String          @db.Uuid
+  projectId           String          @db.Uuid
+  code                String
+  name                String
+  description         String?
+  status              StructureStatus @default(ACTIVE)
+  statusBeforeArchive StructureStatus?
+  sortOrder           Int             @default(0)
+  version             Int             @default(1)
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  deletedAt           DateTime?
+  createdById         String?         @db.Uuid
+  updatedById         String?         @db.Uuid
+
+  sector  Sector  @relation(fields: [sectorId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([sectorId, code])
+  @@index([projectId, deletedAt])
+  @@index([sectorId, deletedAt])
+  @@index([projectId, status, deletedAt])
+  @@index([sectorId, sortOrder])
+  @@index([status])
+  @@index([name])
+  @@index([createdAt])
+}
