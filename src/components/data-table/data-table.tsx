@@ -37,6 +37,11 @@ type DataTableProps<TData> = {
   onPageChange?: (page: number) => void;
   toolbar?: React.ReactNode;
   className?: string;
+  /** Stable row id for virtualization / selection at large scale. */
+  getRowId?: (row: TData, index: number) => string;
+  /** Reserved for future windowed rendering (e.g. @tanstack/react-virtual). */
+  virtualized?: boolean;
+  estimateRowHeight?: number;
 };
 
 export function DataTable<TData>({
@@ -54,6 +59,9 @@ export function DataTable<TData>({
   onPageChange,
   toolbar,
   className,
+  getRowId,
+  virtualized = false,
+  estimateRowHeight = 52,
 }: DataTableProps<TData>) {
   const [sorting, setSorting] = useState<SortingState>([]);
 
@@ -63,8 +71,13 @@ export function DataTable<TData>({
     state: { sorting },
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
+    getRowId,
     manualSorting: true,
+    manualPagination: true,
   });
+
+  void virtualized;
+  void estimateRowHeight;
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 

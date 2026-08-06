@@ -9,6 +9,7 @@ import {
 import type {
   HouseDto,
   HouseImportPreviewDto,
+  HouseImportResultDto,
   HouseStatsDto,
   HouseStatusHistoryDto,
   HouseTemplateDto,
@@ -20,6 +21,7 @@ import type {
   CreateHouseTypeInput,
   HouseImportCommitInput,
   HouseImportPreviewInput,
+  ReviseHouseTemplateInput,
   UpdateHouseInput,
   UpdateHouseTemplateInput,
   UpdateHouseTypeInput,
@@ -109,6 +111,24 @@ export function useHousesQuery(params: {
     },
     enabled: !!params.projectId,
     placeholderData: keepPreviousData,
+    staleTime: 60_000,
+  });
+}
+
+export function useHouseQuery(id: string) {
+  return useQuery({
+    queryKey: houseKeys.detail(id),
+    queryFn: () => api<HouseDto>(`/api/v1/houses/${id}`),
+    enabled: !!id,
+    staleTime: 60_000,
+  });
+}
+
+export function useHouseTemplateQuery(id?: string) {
+  return useQuery({
+    queryKey: [...ROOT, "template", id] as const,
+    queryFn: () => api<HouseTemplateDto>(`/api/v1/house-templates/${id}`),
+    enabled: !!id,
     staleTime: 60_000,
   });
 }
@@ -233,19 +253,31 @@ export function useHouseImportMutation(projectId: string) {
       input: (HouseImportPreviewInput | HouseImportCommitInput) & { commit?: boolean },
     ) => {
       if (input.commit) {
-        return api<{ imported: number }>("/api/v1/houses/import", {
+        return api<HouseImportResultDto>("/api/v1/houses/import", {
           method: "POST",
-          body: JSON.stringify({ ...input, commit: true }),
+          body: JSON.stringify({ ...input, commit: true, dryRun: false }),
         });
       }
       return api<HouseImportPreviewDto>("/api/v1/houses/import", {
         method: "POST",
-        body: JSON.stringify(input),
+        body: JSON.stringify({ ...input, dryRun: true }),
       });
     },
     onSuccess: (_data, vars) => {
       if (vars.commit) invalidateHouses(qc, projectId);
     },
+  });
+}
+
+export function useReviseHouseTemplateMutation(projectId?: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string; input: ReviseHouseTemplateInput }) =>
+      api<HouseTemplateDto>(`/api/v1/house-templates/${id}/revisions`, {
+        method: "POST",
+        body: JSON.stringify(input),
+      }),
+    onSuccess: () => invalidateHouses(qc, projectId),
   });
 }
 

@@ -13,8 +13,10 @@ import type { HouseStatus, Prisma } from "@prisma/client";
 import {
   toHouseDto,
   toHouseStatusHistoryDto,
+  type HouseImportDuplicate,
   type HouseImportIssue,
   type HouseImportPreviewDto,
+  type HouseImportResultDto,
 } from "../mappers";
 import {
   appendHouseStatusHistory,
@@ -34,6 +36,7 @@ import {
   listSavedFilters,
   loadStructureMaps,
   softDeleteHouse,
+  softDeleteHousesByIds,
   updateHouse,
 } from "../repositories/house.repository";
 import type {
@@ -477,9 +480,11 @@ export const housesService = {
     const fileCodes = new Set<string>();
     const filePlots = new Set<string>();
     const issues: HouseImportIssue[] = [];
+    const duplicatePreview: HouseImportDuplicate[] = [];
     const rows: HouseImportPreviewDto["rows"] = [];
     let valid = 0;
     let duplicates = 0;
+    let autoCoded = 0;
 
     input.rows.forEach((raw, index) => {
       const rowNum = index + 1;
@@ -542,15 +547,38 @@ export const housesService = {
         }
       }
 
-      const code = (raw.code?.trim() || `AUTO-${rowNum}`).toUpperCase();
-      if (block) {
+      const providedCode = raw.code?.trim();
+      const code = (providedCode || `AUTO-${rowNum}`).toUpperCase();
+      if (!providedCode) autoCoded += 1;
+
+      if (block && providedCode) {
         const key = `${block.id}:${code}`;
-        if (fileCodes.has(key) || existingCodes.has(key)) {
+        if (fileCodes.has(key)) {
           duplicates += 1;
+          duplicatePreview.push({
+            row: rowNum,
+            field: "code",
+            value: code,
+            source: "file",
+          });
           rowIssues.push({
             row: rowNum,
             field: "code",
-            message: `Duplicate house code ${code}`,
+            message: `Duplicate house code ${code} in file`,
+            severity: "error",
+          });
+        } else if (existingCodes.has(key)) {
+          duplicates += 1;
+          duplicatePreview.push({
+            row: rowNum,
+            field: "code",
+            value: code,
+            source: "database",
+          });
+          rowIssues.push({
+            row: rowNum,
+            field: "code",
+            message: `Duplicate house code ${code} already exists`,
             severity: "error",
           });
         } else {
@@ -560,12 +588,32 @@ export const housesService = {
 
       if (raw.plotNo) {
         const plot = raw.plotNo.toUpperCase();
-        if (filePlots.has(plot) || existingPlots.has(plot)) {
+        if (filePlots.has(plot)) {
           duplicates += 1;
+          duplicatePreview.push({
+            row: rowNum,
+            field: "plotNo",
+            value: raw.plotNo,
+            source: "file",
+          });
           rowIssues.push({
             row: rowNum,
             field: "plotNo",
-            message: `Duplicate plot number ${raw.plotNo}`,
+            message: `Duplicate plot number ${raw.plotNo} in file`,
+            severity: "warning",
+          });
+        } else if (existingPlots.has(plot)) {
+          duplicates += 1;
+          duplicatePreview.push({
+            row: rowNum,
+            field: "plotNo",
+            value: raw.plotNo,
+            source: "database",
+          });
+          rowIssues.push({
+            row: rowNum,
+            field: "plotNo",
+            message: `Duplicate plot number ${raw.plotNo} already exists`,
             severity: "warning",
           });
         } else {
@@ -586,98 +634,132 @@ export const housesService = {
           resolvedBlockId: block?.id,
           resolvedHouseTypeId: houseType?.id,
           resolvedTemplateId: templateId,
-          resolvedCode: code === `AUTO-${rowNum}` ? null : code,
+          resolvedCode: providedCode ? code : null,
         },
       });
     });
 
+    const invalid = input.rows.length - valid;
+    const errorReport = issues.filter((i) => i.severity === "error");
+    const warnings = issues.filter((i) => i.severity === "warning").length;
+
     return {
+      dryRun: input.dryRun !== false,
       total: input.rows.length,
       valid,
-      invalid: input.rows.length - valid,
+      invalid,
       duplicates,
+      warnings,
       issues,
+      errorReport,
+      duplicatePreview,
+      summary: {
+        wouldImport: valid,
+        blocked: invalid,
+        autoCoded,
+      },
       rows,
     };
   },
 
-  async importCommit(input: HouseImportCommitInput) {
+  async importCommit(input: HouseImportCommitInput): Promise<HouseImportResultDto> {
     const actor = await requirePermission(PERMISSIONS.HOUSES_IMPORT);
     await assertProjectVisible(actor.id, input.projectId);
 
-    const preview = await this.importPreview(input);
+    const preview = await this.importPreview({ ...input, dryRun: false });
     if (preview.invalid > 0) {
       throw new ValidationAppError(
-        `Import blocked: ${preview.invalid} invalid row(s). Fix issues and retry.`,
+        `Import blocked: ${preview.invalid} invalid row(s). Review error report and retry.`,
       );
     }
 
     const createdIds: string[] = [];
     const chunkSize = 200;
     const validRows = preview.rows.filter((r) => r.ok);
+    let rolledBack = false;
 
-    for (let i = 0; i < validRows.length; i += chunkSize) {
-      const chunk = validRows.slice(i, i + chunkSize);
-      const payload: Prisma.HouseCreateManyInput[] = [];
+    try {
+      for (let i = 0; i < validRows.length; i += chunkSize) {
+        const chunk = validRows.slice(i, i + chunkSize);
+        const payload: Prisma.HouseCreateManyInput[] = [];
 
-      for (const row of chunk) {
-        const d = row.data as Record<string, unknown>;
-        const blockId = String(d.resolvedBlockId);
-        const code = d.resolvedCode
-          ? String(d.resolvedCode).toUpperCase()
-          : await allocateHouseCode(blockId);
-        const status = (d.status as HouseStatus | undefined) ?? "PLANNING";
-        const templateId = d.resolvedTemplateId
-          ? String(d.resolvedTemplateId)
-          : null;
+        for (const row of chunk) {
+          const d = row.data as Record<string, unknown>;
+          const blockId = String(d.resolvedBlockId);
+          const code = d.resolvedCode
+            ? String(d.resolvedCode).toUpperCase()
+            : await allocateHouseCode(blockId);
+          const status = (d.status as HouseStatus | undefined) ?? "PLANNING";
+          const templateId = d.resolvedTemplateId
+            ? String(d.resolvedTemplateId)
+            : null;
 
-        payload.push({
-          projectId: input.projectId,
-          phaseId: String(d.resolvedPhaseId),
-          sectorId: String(d.resolvedSectorId),
-          blockId,
-          houseTypeId: String(d.resolvedHouseTypeId),
-          houseTemplateId: templateId,
-          code,
-          plotNo: d.plotNo ? String(d.plotNo) : null,
-          status,
-          ownerName: d.ownerName ? String(d.ownerName) : null,
-          notes: d.notes ? String(d.notes) : null,
-          gpsLatitude: typeof d.gpsLatitude === "number" ? d.gpsLatitude : null,
-          gpsLongitude:
-            typeof d.gpsLongitude === "number" ? d.gpsLongitude : null,
-          seededFromTemplate: !!templateId,
-          createdById: actor.id,
-          updatedById: actor.id,
+          payload.push({
+            projectId: input.projectId,
+            phaseId: String(d.resolvedPhaseId),
+            sectorId: String(d.resolvedSectorId),
+            blockId,
+            houseTypeId: String(d.resolvedHouseTypeId),
+            houseTemplateId: templateId,
+            code,
+            plotNo: d.plotNo ? String(d.plotNo) : null,
+            status,
+            ownerName: d.ownerName ? String(d.ownerName) : null,
+            notes: d.notes ? String(d.notes) : null,
+            gpsLatitude: typeof d.gpsLatitude === "number" ? d.gpsLatitude : null,
+            gpsLongitude:
+              typeof d.gpsLongitude === "number" ? d.gpsLongitude : null,
+            seededFromTemplate: !!templateId,
+            createdById: actor.id,
+            updatedById: actor.id,
+          });
+        }
+
+        await createHousesMany(payload);
+
+        const created = await prisma.house.findMany({
+          where: {
+            projectId: input.projectId,
+            deletedAt: null,
+            OR: payload.map((p) => ({ blockId: p.blockId, code: p.code })),
+          },
+          select: { id: true, projectId: true, status: true },
         });
+
+        if (created.length) {
+          await prisma.houseStatusHistory.createMany({
+            data: created.map((h) => ({
+              houseId: h.id,
+              projectId: h.projectId,
+              fromStatus: null,
+              toStatus: h.status,
+              note: "Imported",
+              changedById: actor.id,
+            })),
+          });
+          createdIds.push(...created.map((h) => h.id));
+        }
       }
-
-      await createHousesMany(payload);
-
-      const codes = payload.map((p) => p.code);
-      const created = await prisma.house.findMany({
-        where: {
-          projectId: input.projectId,
-          deletedAt: null,
-          code: { in: codes },
-          blockId: { in: payload.map((p) => p.blockId) },
+    } catch (error) {
+      if (createdIds.length) {
+        await softDeleteHousesByIds(createdIds, actor.id);
+        rolledBack = true;
+      }
+      writeAuditLogAsync({
+        actorId: actor.id,
+        action: "houses.import.rollback",
+        entityType: "House",
+        projectId: input.projectId,
+        meta: {
+          rolledBack: createdIds.length,
+          message: error instanceof Error ? error.message : "Import failed",
         },
-        select: { id: true, projectId: true, status: true },
       });
-
-      if (created.length) {
-        await prisma.houseStatusHistory.createMany({
-          data: created.map((h) => ({
-            houseId: h.id,
-            projectId: h.projectId,
-            fromStatus: null,
-            toStatus: h.status,
-            note: "Imported",
-            changedById: actor.id,
-          })),
-        });
-        createdIds.push(...created.map((h) => h.id));
-      }
+      throw new ValidationAppError(
+        `Import failed and was rolled back (${createdIds.length} row(s) reverted). ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
+      );
     }
 
     writeAuditLogAsync({
@@ -685,10 +767,19 @@ export const housesService = {
       action: "houses.import",
       entityType: "House",
       projectId: input.projectId,
-      meta: { count: createdIds.length },
+      meta: { count: createdIds.length, rolledBack },
     });
 
-    return { imported: createdIds.length, ids: createdIds };
+    return {
+      imported: createdIds.length,
+      ids: createdIds,
+      rolledBack,
+      summary: {
+        requested: validRows.length,
+        imported: createdIds.length,
+        failed: 0,
+      },
+    };
   },
 };
 

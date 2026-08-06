@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { toast } from "sonner";
 import {
   Archive,
@@ -26,7 +27,11 @@ import {
 import { Can } from "@/features/rbac/components/can";
 import { useProjectHierarchyQuery } from "@/features/structure/hooks/use-structure";
 import type { ColumnDef } from "@tanstack/react-table";
-import { HOUSE_STATUS_LABELS, type HouseDto } from "../mappers";
+import {
+  HOUSE_STATUS_LABELS,
+  type HouseDto,
+  type HouseImportPreviewDto,
+} from "../mappers";
 import {
   useBulkHousesMutation,
   useCreateHouseMutation,
@@ -67,11 +72,9 @@ export function ProjectHousesPanel({ projectId, readOnly }: Props) {
   const [newTypeId, setNewTypeId] = useState("");
   const [newTemplateId, setNewTemplateId] = useState("__none__");
   const [csvText, setCsvText] = useState("");
-  const [importPreview, setImportPreview] = useState<{
-    valid: number;
-    invalid: number;
-    duplicates: number;
-  } | null>(null);
+  const [importPreview, setImportPreview] = useState<HouseImportPreviewDto | null>(
+    null,
+  );
   const [filterName, setFilterName] = useState("");
 
   const hierarchyQuery = useProjectHierarchyQuery(projectId, true);
@@ -145,7 +148,12 @@ export function ProjectHousesPanel({ projectId, readOnly }: Props) {
         header: "House #",
         cell: ({ row }) => (
           <div className="min-w-0">
-            <p className="font-medium">{row.original.code}</p>
+            <Link
+              href={`/houses/${row.original.id}`}
+              className="font-medium text-primary underline-offset-2 hover:underline"
+            >
+              {row.original.code}
+            </Link>
             <p className="text-xs text-muted-foreground">
               {row.original.plotNo ? `Plot ${row.original.plotNo}` : "—"}
             </p>
@@ -192,7 +200,8 @@ export function ProjectHousesPanel({ projectId, readOnly }: Props) {
         sectorId: newSectorId,
         blockId: newBlockId,
         houseTypeId: newTypeId,
-        houseTemplateId: newTemplateId === "__none__" ? null : newTemplateId,
+        houseTemplateId:
+          newTemplateId === "__none__" ? null : newTemplateId || null,
         code: newNameCode.trim() || null,
         plotNo: newPlot.trim() || null,
       });
@@ -243,17 +252,14 @@ export function ProjectHousesPanel({ projectId, readOnly }: Props) {
       const preview = (await importMutation.mutateAsync({
         projectId,
         rows,
-      })) as {
-        valid: number;
-        invalid: number;
-        duplicates: number;
-      };
+        dryRun: true,
+      })) as HouseImportPreviewDto;
       setImportPreview(preview);
       toast.message(
-        `Preview: ${preview.valid} valid, ${preview.invalid} invalid, ${preview.duplicates} duplicates`,
+        `Dry run: ${preview.summary.wouldImport} would import, ${preview.summary.blocked} blocked, ${preview.duplicates} duplicates`,
       );
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Preview failed");
+      toast.error(error instanceof Error ? error.message : "Dry run failed");
     }
   }
 
@@ -262,12 +268,15 @@ export function ProjectHousesPanel({ projectId, readOnly }: Props) {
       const rows = parseCsv(csvText).filter(
         (r) => r.phaseCode && r.sectorCode && r.blockCode && r.houseTypeCode,
       );
-      const result = (await importMutation.mutateAsync({
+      const result = await importMutation.mutateAsync({
         projectId,
         rows,
         commit: true,
-      })) as { imported: number };
-      toast.success(`Imported ${result.imported} houses`);
+      });
+      toast.success(
+        `Imported ${(result as { imported: number }).imported} houses` +
+          ((result as { rolledBack?: boolean }).rolledBack ? " (rolled back)" : ""),
+      );
       setCsvText("");
       setImportPreview(null);
     } catch (error) {
@@ -278,10 +287,7 @@ export function ProjectHousesPanel({ projectId, readOnly }: Props) {
   async function runBulk() {
     if (!confirm || !selectedIds.length) return;
     try {
-      await bulkMutation.mutateAsync({
-        action: confirm.action,
-        ids: selectedIds,
-      });
+      await bulkMutation.mutateAsync({ action: confirm.action, ids: selectedIds });
       toast.success(`Bulk ${confirm.action} complete`);
       setSelectedIds([]);
       setConfirm(null);
@@ -300,188 +306,90 @@ export function ProjectHousesPanel({ projectId, readOnly }: Props) {
     );
   }
 
-  const stats = statsQuery.data;
-
   return (
-    <div className="space-y-4 pb-20 md:pb-0">
-      {stats ? (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div className="rounded-xl border border-border/70 p-3">
-            <p className="text-xs text-muted-foreground">Houses</p>
-            <p className="text-xl font-semibold">{stats.total}</p>
-          </div>
-          <div className="rounded-xl border border-border/70 p-3">
-            <p className="text-xs text-muted-foreground">Types</p>
-            <p className="text-xl font-semibold">{stats.houseTypeCount}</p>
-          </div>
-          <div className="rounded-xl border border-border/70 p-3">
-            <p className="text-xs text-muted-foreground">Planning</p>
-            <p className="text-xl font-semibold">{stats.planning}</p>
-          </div>
-          <div className="rounded-xl border border-border/70 p-3">
-            <p className="text-xs text-muted-foreground">Completed</p>
-            <p className="text-xl font-semibold">{stats.completed}</p>
-          </div>
+    <div className="space-y-6 pb-24 md:pb-0">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="rounded-2xl border border-border/70 p-3">
+          <p className="text-xs text-muted-foreground">Total</p>
+          <p className="text-xl font-semibold">{statsQuery.data?.total ?? "—"}</p>
         </div>
-      ) : null}
+        <div className="rounded-2xl border border-border/70 p-3">
+          <p className="text-xs text-muted-foreground">Planning</p>
+          <p className="text-xl font-semibold">{statsQuery.data?.planning ?? "—"}</p>
+        </div>
+        <div className="rounded-2xl border border-border/70 p-3">
+          <p className="text-xs text-muted-foreground">Completed</p>
+          <p className="text-xl font-semibold">{statsQuery.data?.completed ?? "—"}</p>
+        </div>
+        <div className="rounded-2xl border border-border/70 p-3">
+          <p className="text-xs text-muted-foreground">Types</p>
+          <p className="text-xl font-semibold">
+            {statsQuery.data?.houseTypeCount ?? "—"}
+          </p>
+        </div>
+      </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        <Select
-          value={phaseId}
-          onValueChange={(v) => {
-            setPhaseId(v);
-            setSectorId("all");
-            setBlockId("all");
-            setPage(1);
-          }}
-        >
-          <SelectTrigger className="min-h-11">
-            <SelectValue placeholder="Phase" />
-          </SelectTrigger>
+      <div className="flex flex-wrap gap-2">
+        <Select value={phaseId} onValueChange={(v) => { setPhaseId(v); setPage(1); }}>
+          <SelectTrigger className="min-h-11 w-[160px]"><SelectValue placeholder="Phase" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All phases</SelectItem>
             {phases.map((p) => (
-              <SelectItem key={p.id} value={p.id}>
-                {p.code} — {p.name}
-              </SelectItem>
+              <SelectItem key={p.id} value={p.id}>{p.code}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={sectorId} onValueChange={(v) => { setSectorId(v); setPage(1); }}>
+          <SelectTrigger className="min-h-11 w-[160px]"><SelectValue placeholder="Sector" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All sectors</SelectItem>
+            {phases.flatMap((p) => p.children ?? []).map((s) => (
+              <SelectItem key={s.id} value={s.id}>{s.code}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={blockId} onValueChange={(v) => { setBlockId(v); setPage(1); }}>
+          <SelectTrigger className="min-h-11 w-[160px]"><SelectValue placeholder="Block" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All blocks</SelectItem>
+            {phases.flatMap((p) => p.children ?? []).flatMap((s) => s.children ?? []).map((b) => (
+              <SelectItem key={b.id} value={b.id}>{b.code}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={houseTypeId} onValueChange={(v) => { setHouseTypeId(v); setPage(1); }}>
+          <SelectTrigger className="min-h-11 w-[180px]"><SelectValue placeholder="Type" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All types</SelectItem>
+            {(typesQuery.data?.data ?? []).map((t) => (
+              <SelectItem key={t.id} value={t.id}>{t.code}</SelectItem>
             ))}
           </SelectContent>
         </Select>
         <Select value={status} onValueChange={(v) => { setStatus(v); setPage(1); }}>
-          <SelectTrigger className="min-h-11">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
+          <SelectTrigger className="min-h-11 w-[180px]"><SelectValue placeholder="Status" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All statuses</SelectItem>
             {STATUS_OPTIONS.map((s) => (
-              <SelectItem key={s} value={s}>
-                {HOUSE_STATUS_LABELS[s]}
-              </SelectItem>
+              <SelectItem key={s} value={s}>{HOUSE_STATUS_LABELS[s]}</SelectItem>
             ))}
           </SelectContent>
         </Select>
-        <Select
-          value={houseTypeId}
-          onValueChange={(v) => {
-            setHouseTypeId(v);
-            setPage(1);
-          }}
-        >
-          <SelectTrigger className="min-h-11">
-            <SelectValue placeholder="Type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All types</SelectItem>
-            {(typesQuery.data?.data ?? []).map((t) => (
-              <SelectItem key={t.id} value={t.id}>
-                {t.code} — {t.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Button
-          variant="outline"
-          className="min-h-11"
-          onClick={() => {
-            setPhaseId("all");
-            setSectorId("all");
-            setBlockId("all");
-            setHouseTypeId("all");
-            setStatus("PLANNING");
-            setPage(1);
-          }}
-        >
-          Quick: Planning
-        </Button>
-        <Button
-          variant="outline"
-          className="min-h-11"
-          onClick={() => {
-            setStatus("UNDER_CONSTRUCTION");
-            setPage(1);
-          }}
-        >
-          Quick: Construction
-        </Button>
       </div>
 
-      {(savedFiltersQuery.data?.length ?? 0) > 0 ? (
+      {!readOnly && selectedIds.length ? (
         <div className="flex flex-wrap gap-2">
-          {savedFiltersQuery.data!.map((f) => (
-            <Button
-              key={f.id}
-              size="sm"
-              variant="secondary"
-              className="min-h-9"
-              onClick={() => {
-                const p = f.payload;
-                if (typeof p.q === "string") setQ(p.q);
-                if (typeof p.status === "string") setStatus(p.status);
-                if (typeof p.phaseId === "string") setPhaseId(p.phaseId);
-                if (typeof p.houseTypeId === "string") setHouseTypeId(p.houseTypeId);
-              }}
-            >
-              {f.name}
+          <Can permission="houses.update">
+            <Button variant="outline" className="min-h-11" onClick={() => setConfirm({ action: "archive" })}>
+              <Archive className="size-4" /> Archive
             </Button>
-          ))}
-        </div>
-      ) : null}
-
-      <div className="flex flex-col gap-2 sm:flex-row">
-        <Input
-          value={filterName}
-          onChange={(e) => setFilterName(e.target.value)}
-          placeholder="Save current filter as…"
-          className="min-h-11"
-        />
-        <Button
-          variant="outline"
-          className="min-h-11"
-          disabled={!filterName.trim()}
-          onClick={async () => {
-            try {
-              await saveFilterMutation.mutateAsync({
-                name: filterName.trim(),
-                projectId,
-                payload: { q, status, phaseId, sectorId, blockId, houseTypeId },
-              });
-              toast.success("Filter saved");
-              setFilterName("");
-            } catch (error) {
-              toast.error(error instanceof Error ? error.message : "Save failed");
-            }
-          }}
-        >
-          Save filter
-        </Button>
-      </div>
-
-      {selectedIds.length > 0 && !readOnly ? (
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            className="min-h-11"
-            onClick={() => setConfirm({ action: "archive" })}
-          >
-            <Archive className="size-4" />
-            Archive ({selectedIds.length})
-          </Button>
-          <Button
-            variant="outline"
-            className="min-h-11"
-            onClick={() => setConfirm({ action: "restore" })}
-          >
-            <RotateCcw className="size-4" />
-            Restore
-          </Button>
-          <Button
-            variant="outline"
-            className="min-h-11"
-            onClick={() => setConfirm({ action: "delete" })}
-          >
-            <Trash2 className="size-4" />
-            Delete
-          </Button>
+            <Button variant="outline" className="min-h-11" onClick={() => setConfirm({ action: "restore" })}>
+              <RotateCcw className="size-4" /> Restore
+            </Button>
+            <Button variant="outline" className="min-h-11" onClick={() => setConfirm({ action: "delete" })}>
+              <Trash2 className="size-4" /> Delete
+            </Button>
+          </Can>
         </div>
       ) : null}
 
@@ -489,7 +397,6 @@ export function ProjectHousesPanel({ projectId, readOnly }: Props) {
         columns={columns}
         data={housesQuery.data?.data ?? []}
         isLoading={housesQuery.isLoading}
-        searchPlaceholder="Search house # or plot…"
         searchValue={q}
         onSearchChange={(value) => {
           setQ(value);
@@ -499,13 +406,64 @@ export function ProjectHousesPanel({ projectId, readOnly }: Props) {
         pageSize={50}
         total={housesQuery.data?.meta.total ?? 0}
         onPageChange={setPage}
+        getRowId={(row) => row.id}
+        virtualized
         emptyTitle="No houses"
-        emptyDescription="Create houses or import from CSV."
+        emptyDescription="Create a house or import CSV rows for this project."
+        toolbar={
+          <div className="flex flex-wrap gap-2">
+            <Input
+              className="min-h-11 w-40"
+              placeholder="Save filter name"
+              value={filterName}
+              onChange={(e) => setFilterName(e.target.value)}
+            />
+            <Button
+              variant="outline"
+              className="min-h-11"
+              disabled={!filterName.trim() || saveFilterMutation.isPending}
+              onClick={async () => {
+                try {
+                  await saveFilterMutation.mutateAsync({
+                    name: filterName.trim(),
+                    projectId,
+                    payload: { phaseId, sectorId, blockId, houseTypeId, status, q },
+                  });
+                  toast.success("Filter saved");
+                  setFilterName("");
+                } catch (error) {
+                  toast.error(error instanceof Error ? error.message : "Save failed");
+                }
+              }}
+            >
+              Save filter
+            </Button>
+            {(savedFiltersQuery.data ?? []).slice(0, 3).map((f) => (
+              <Button
+                key={f.id}
+                variant="ghost"
+                className="min-h-11"
+                onClick={() => {
+                  const p = f.payload;
+                  if (typeof p.phaseId === "string") setPhaseId(p.phaseId);
+                  if (typeof p.sectorId === "string") setSectorId(p.sectorId);
+                  if (typeof p.blockId === "string") setBlockId(p.blockId);
+                  if (typeof p.houseTypeId === "string") setHouseTypeId(p.houseTypeId);
+                  if (typeof p.status === "string") setStatus(p.status);
+                  if (typeof p.q === "string") setQ(p.q);
+                  setPage(1);
+                }}
+              >
+                {f.name}
+              </Button>
+            ))}
+          </div>
+        }
       />
 
       {!readOnly ? (
         <div className="space-y-4 rounded-2xl border border-border/70 p-4">
-          <p className="text-sm font-medium">Add house</p>
+          <p className="text-sm font-medium">Create house</p>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <Select value={newPhaseId} onValueChange={(v) => { setNewPhaseId(v); setNewSectorId(""); setNewBlockId(""); }}>
               <SelectTrigger className="min-h-11"><SelectValue placeholder="Phase" /></SelectTrigger>
@@ -563,7 +521,7 @@ export function ProjectHousesPanel({ projectId, readOnly }: Props) {
           <div className="border-t border-border/60 pt-4 space-y-2">
             <p className="text-sm font-medium">CSV import</p>
             <p className="text-xs text-muted-foreground">
-              Headers: phase,sector,block,type,code,plot,template,owner,notes
+              Headers: phase,sector,block,type,code,plot,template,owner,notes · Dry run before commit · rollback on failure
             </p>
             <textarea
               className="min-h-28 w-full rounded-xl border border-input bg-transparent px-3 py-2 text-sm"
@@ -572,17 +530,49 @@ export function ProjectHousesPanel({ projectId, readOnly }: Props) {
               placeholder={"phase,sector,block,type,code,plot\nPH-001,SEC-A,BLK-01,HT-001,HSE-001,P-12"}
             />
             {importPreview ? (
-              <p className="text-xs text-muted-foreground">
-                Preview — valid {importPreview.valid}, invalid {importPreview.invalid},
-                duplicates {importPreview.duplicates}
-              </p>
+              <div className="space-y-2 rounded-xl border border-border/60 p-3 text-xs">
+                <p className="font-medium">
+                  Dry run summary — would import {importPreview.summary.wouldImport}, blocked{" "}
+                  {importPreview.summary.blocked}, auto-coded {importPreview.summary.autoCoded},
+                  duplicates {importPreview.duplicates}, warnings {importPreview.warnings}
+                </p>
+                {importPreview.errorReport.length ? (
+                  <div>
+                    <p className="font-medium text-destructive">Error report</p>
+                    <ul className="mt-1 max-h-28 space-y-1 overflow-auto text-muted-foreground">
+                      {importPreview.errorReport.slice(0, 20).map((issue, idx) => (
+                        <li key={`${issue.row}-${issue.field}-${idx}`}>
+                          Row {issue.row}
+                          {issue.field ? ` · ${issue.field}` : ""}: {issue.message}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+                {importPreview.duplicatePreview.length ? (
+                  <div>
+                    <p className="font-medium">Duplicate preview</p>
+                    <ul className="mt-1 max-h-28 space-y-1 overflow-auto text-muted-foreground">
+                      {importPreview.duplicatePreview.slice(0, 20).map((dup, idx) => (
+                        <li key={`${dup.row}-${dup.field}-${idx}`}>
+                          Row {dup.row} · {dup.field}={dup.value} ({dup.source})
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+              </div>
             ) : null}
             <div className="flex flex-wrap gap-2">
               <Can permission="houses.import">
                 <Button variant="outline" className="min-h-11" onClick={handlePreviewImport}>
-                  Preview
+                  Dry run
                 </Button>
-                <Button className="min-h-11" onClick={handleCommitImport} disabled={!importPreview || importPreview.invalid > 0}>
+                <Button
+                  className="min-h-11"
+                  onClick={handleCommitImport}
+                  disabled={!importPreview || importPreview.invalid > 0}
+                >
                   <Upload className="size-4" />
                   Commit import
                 </Button>

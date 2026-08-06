@@ -12,6 +12,9 @@ enum UserStatus { ACTIVE INACTIVE INVITED LOCKED }
 enum ProjectStatus { DRAFT ACTIVE ON_HOLD COMPLETED ARCHIVED }
 enum HouseStatus { NOT_STARTED IN_PROGRESS HOLD COMPLETED HANDED_OVER }
 enum DocumentStatus { DRAFT SUBMITTED UNDER_REVIEW APPROVED REJECTED CANCELLED POSTED }
+enum RarStatus { DRAFT SUBMITTED VERIFIED APPROVED PAID CANCELLED }
+enum PaymentVoucherStatus { DRAFT SUBMITTED VERIFIED APPROVED PAID CANCELLED }
+enum YardStickStatus { DRAFT ACTIVE ARCHIVED }
 enum IrResult { PENDING PASS FAIL CONDITIONAL }
 enum StockDirection { IN OUT ADJUST }
 enum InventoryRefType { GRN ISSUE RETURN CONSUMPTION ADJUSTMENT TRANSFER }
@@ -1017,6 +1020,244 @@ model Payment {
   bill ContractorBill @relation(fields: [billId], references: [id])
 }
 ```
+
+---
+
+## 9A. Yard Stick, Progress Sheets, RAR, Payment Voucher (additive)
+
+> Design-only until Modules **11A / 24A / 24B**. Additive — does not replace `ContractorBill` / `Payment`.
+
+```prisma
+model YardStickTemplate {
+  id            String          @id @default(uuid()) @db.Uuid
+  projectId     String?         @db.Uuid
+  houseTypeId   String?         @db.Uuid
+  code          String
+  name          String
+  version       Int             @default(1)
+  status        YardStickStatus @default(DRAFT)
+  effectiveDate DateTime?       @db.Date
+  description   String?
+  revisionOfId  String?         @db.Uuid
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  deletedAt     DateTime?
+  createdById   String?         @db.Uuid
+  updatedById   String?         @db.Uuid
+
+  items         YardStickItem[]
+  houseTemplates HouseTemplate[] // HouseTemplate.yardStickTemplateId (additive FK)
+
+  @@unique([projectId, code, version])
+  @@index([houseTypeId, status])
+  @@index([status, effectiveDate])
+}
+
+model YardStickItem {
+  id                 String  @id @default(uuid()) @db.Uuid
+  yardStickTemplateId String @db.Uuid
+  activityId         String? @db.Uuid
+  houseTypeId        String? @db.Uuid
+  houseTemplateId    String? @db.Uuid
+  sequence           Int     @default(0)
+  name               String
+  measurementUnit    String?
+  weightPct          Decimal @db.Decimal(7, 4)   // progress weight
+  paymentPct         Decimal @db.Decimal(7, 4)   // payment weight
+  isActive           Boolean @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  template YardStickTemplate @relation(fields: [yardStickTemplateId], references: [id], onDelete: Cascade)
+
+  @@index([yardStickTemplateId, sequence])
+  @@index([activityId])
+}
+
+model ProgressSheet {
+  id          String         @id @default(uuid()) @db.Uuid
+  projectId   String         @db.Uuid
+  houseId     String?        @db.Uuid
+  code        String
+  periodFrom  DateTime?      @db.Date
+  periodTo    DateTime?      @db.Date
+  status      DocumentStatus @default(DRAFT)
+  completionPct Decimal      @default(0) @db.Decimal(7, 4)
+  generatedAt DateTime       @default(now())
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  deletedAt   DateTime?
+  createdById String?        @db.Uuid
+
+  lines ProgressSheetLine[]
+  @@unique([projectId, code])
+  @@index([projectId, houseId])
+}
+
+model ProgressSheetLine {
+  id               String  @id @default(uuid()) @db.Uuid
+  progressSheetId  String  @db.Uuid
+  houseActivityId  String? @db.Uuid
+  yardStickItemId  String? @db.Uuid
+  activityName     String
+  sequence         Int     @default(0)
+  weightPct        Decimal @db.Decimal(7, 4)
+  completedPct     Decimal @db.Decimal(7, 4)
+  earnedWeightPct  Decimal @db.Decimal(7, 4)
+
+  sheet ProgressSheet @relation(fields: [progressSheetId], references: [id], onDelete: Cascade)
+  @@index([progressSheetId, sequence])
+}
+
+model RunningAccountReceipt {
+  id             String    @id @default(uuid()) @db.Uuid
+  projectId      String    @db.Uuid
+  contractorId   String    @db.Uuid
+  mbId           String?   @db.Uuid
+  yardStickTemplateId String? @db.Uuid
+  code           String
+  periodFrom     DateTime? @db.Date
+  periodTo       DateTime? @db.Date
+  status         RarStatus @default(DRAFT)
+  grossAmount    Decimal   @default(0) @db.Decimal(16, 2)
+  deductionTotal Decimal   @default(0) @db.Decimal(16, 2)
+  adjustmentTotal Decimal  @default(0) @db.Decimal(16, 2)
+  netAmount      Decimal   @default(0) @db.Decimal(16, 2) // Payment Engine
+  submittedAt    DateTime?
+  verifiedAt     DateTime?
+  approvedAt     DateTime?
+  paidAt         DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+  createdById    String?   @db.Uuid
+  updatedById    String?   @db.Uuid
+  version        Int       @default(1)
+
+  lines       RARLine[]
+  deductions  RARDeduction[]
+  adjustments RARAdjustment[]
+  history     RARHistory[]
+  vouchers    PaymentVoucher[]
+
+  @@unique([projectId, code])
+  @@index([contractorId, status])
+  @@index([mbId])
+  @@index([projectId, status])
+}
+
+model RARLine {
+  id          String  @id @default(uuid()) @db.Uuid
+  rarId       String  @db.Uuid
+  mbEntryId   String? @db.Uuid
+  boqItemId   String? @db.Uuid
+  yardStickItemId String? @db.Uuid
+  houseId     String? @db.Uuid
+  description String
+  unit        String?
+  quantity    Decimal @db.Decimal(14, 3)
+  rate        Decimal @db.Decimal(14, 2)
+  paymentPct  Decimal @default(100) @db.Decimal(7, 4)
+  amount      Decimal @db.Decimal(16, 2) // Engine: qty * rate * paymentPct/100
+
+  rar RunningAccountReceipt @relation(fields: [rarId], references: [id], onDelete: Cascade)
+  @@index([rarId])
+}
+
+model RARDeduction {
+  id          String  @id @default(uuid()) @db.Uuid
+  rarId       String  @db.Uuid
+  code        String?
+  description String
+  amount      Decimal @db.Decimal(16, 2)
+  sortOrder   Int     @default(0)
+
+  rar RunningAccountReceipt @relation(fields: [rarId], references: [id], onDelete: Cascade)
+  @@index([rarId, sortOrder])
+}
+
+model RARAdjustment {
+  id          String  @id @default(uuid()) @db.Uuid
+  rarId       String  @db.Uuid
+  code        String?
+  description String
+  amount      Decimal @db.Decimal(16, 2) // signed
+  sortOrder   Int     @default(0)
+
+  rar RunningAccountReceipt @relation(fields: [rarId], references: [id], onDelete: Cascade)
+  @@index([rarId, sortOrder])
+}
+
+model RARHistory {
+  id          String    @id @default(uuid()) @db.Uuid
+  rarId       String    @db.Uuid
+  fromStatus  RarStatus?
+  toStatus    RarStatus
+  snapshot    Json
+  note        String?
+  createdById String?   @db.Uuid
+  createdAt   DateTime  @default(now())
+
+  rar RunningAccountReceipt @relation(fields: [rarId], references: [id], onDelete: Cascade)
+  @@index([rarId, createdAt])
+}
+
+model PaymentVoucher {
+  id                    String               @id @default(uuid()) @db.Uuid
+  projectId             String               @db.Uuid
+  contractorId          String               @db.Uuid
+  rarId                 String?              @db.Uuid
+  code                  String
+  voucherDate           DateTime             @db.Date
+  status                PaymentVoucherStatus @default(DRAFT)
+  grossAmount           Decimal              @default(0) @db.Decimal(16, 2)
+  taxAmount             Decimal              @default(0) @db.Decimal(16, 2)
+  retentionAmount       Decimal              @default(0) @db.Decimal(16, 2)
+  mobilizationRecovery  Decimal              @default(0) @db.Decimal(16, 2)
+  materialRecovery      Decimal              @default(0) @db.Decimal(16, 2)
+  waterCharges          Decimal              @default(0) @db.Decimal(16, 2)
+  transportationCharges Decimal              @default(0) @db.Decimal(16, 2)
+  loadingUnloading      Decimal              @default(0) @db.Decimal(16, 2)
+  bankCharges           Decimal              @default(0) @db.Decimal(16, 2)
+  otherDeductions       Decimal              @default(0) @db.Decimal(16, 2)
+  netPayable            Decimal              @default(0) @db.Decimal(16, 2) // Engine
+  submittedAt           DateTime?
+  verifiedAt            DateTime?
+  approvedAt            DateTime?
+  paidAt                DateTime?
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+  deletedAt             DateTime?
+  createdById           String?              @db.Uuid
+  updatedById           String?              @db.Uuid
+  version               Int                  @default(1)
+
+  rar   RunningAccountReceipt? @relation(fields: [rarId], references: [id])
+  lines PaymentVoucherLine[]
+  payments Payment[]
+
+  @@unique([projectId, code])
+  @@index([contractorId, status])
+  @@index([rarId])
+  @@index([projectId, status])
+}
+
+model PaymentVoucherLine {
+  id          String  @id @default(uuid()) @db.Uuid
+  voucherId   String  @db.Uuid
+  lineType    String  // WORK | TAX | RETENTION | RECOVERY | CHARGE | OTHER
+  description String
+  amount      Decimal @db.Decimal(16, 2)
+  sortOrder   Int     @default(0)
+
+  voucher PaymentVoucher @relation(fields: [voucherId], references: [id], onDelete: Cascade)
+  @@index([voucherId, sortOrder])
+}
+```
+
+**Payment model additive note:** extend `Payment` with optional `voucherId` (nullable FK → `PaymentVoucher`) while keeping existing `billId` for Module 25 compatibility.
+
+**HouseTemplate additive note:** optional `yardStickTemplateId` FK → `YardStickTemplate` (Module 7 compatible; required for payment-ready templates once 11A ships).
 
 ---
 

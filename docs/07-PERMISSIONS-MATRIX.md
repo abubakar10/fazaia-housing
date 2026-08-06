@@ -32,7 +32,11 @@ Format: `{module}.{action}`
 - `ir.read` `ir.create` `ir.submit` `ir.review` `ir.approve`
 - `dpr.read` `dpr.create` `dpr.submit` `dpr.approve`
 - `wpr.read` `wpr.create` `wpr.submit` `wpr.approve`
-- `mb.read` `mb.manage` `mb.approve`
+- `mb.read` `mb.manage` `mb.approve` `mb.submit`
+- `yardsticks.read` `yardsticks.manage` `yardsticks.revise`
+- `rars.read` `rars.create` `rars.submit` `rars.verify` `rars.approve` `rars.cancel`
+- `payment_vouchers.read` `payment_vouchers.create` `payment_vouchers.submit` `payment_vouchers.verify` `payment_vouchers.approve` `payment_vouchers.cancel` `payment_vouchers.print`
+- `progress_sheets.read` `progress_sheets.generate` `progress_sheets.export`
 
 ### Inventory
 - `warehouses.read` `warehouses.manage`
@@ -67,13 +71,13 @@ Format: `{module}.{action}`
 |---|---|
 | **Super Admin** | All permissions |
 | **ADH** | Org-wide read; project oversight; directives; dashboards; approve high-level |
-| **AD Tech** | Technical masters (BOQ, activities, house types); reports |
-| **Resident Engineer** | Project ops: houses, DPR/WPR approve, IR review, MB, contractor coord |
+| **AD Tech** | Technical masters (BOQ, activities, yard sticks, house types); reports |
+| **Resident Engineer** | Project ops: houses, DPR/WPR approve, IR review, MB, RAR verify, contractor coord |
 | **Quality Manager** | IR review/approve; quality reports |
-| **Contractor** | Limited project read; IR create/submit; own bills draft/submit; DPR create |
+| **Contractor** | Limited project read; IR create/submit; own bills/RAR draft/submit; DPR create |
 | **Contractor Engineer** | Site execution: activities progress, IR, DPR lines |
 | **Store Officer** | Warehouses, GRN, issue, returns, ledger, MR/DV fulfill |
-| **Finance** | Bills verify/approve, payments, budgets, financial reports |
+| **Finance** | Bills/RAR/Voucher verify/approve, payments, budgets, financial reports |
 | **Site Supervisor** | DPR/WPR create, MR create, consumption, houses read/update progress |
 | **Senior Management** | Dashboards, reports, directives read, audit read (no operational post) |
 

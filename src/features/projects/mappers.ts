@@ -100,6 +100,14 @@ export type ProjectDashboardDto = {
     completed: number;
     planning: number;
     constructionProgressPercent: number;
+    placeholders: {
+      activities: number;
+      boq: number;
+      inspections: number;
+      materials: number;
+      progress: number;
+      budget: number | null;
+    };
   };
   memberPreview: ProjectMemberDto[];
   memberCount: number;

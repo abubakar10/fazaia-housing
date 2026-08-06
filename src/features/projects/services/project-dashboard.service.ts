@@ -94,6 +94,7 @@ export const projectDashboardService = {
         completed: houseStats.completed,
         planning: houseStats.planning,
         constructionProgressPercent: houseStats.constructionProgressPercent,
+        placeholders: houseStats.placeholders,
       },
       memberPreview: memberPreview.map(toProjectMemberDto),
       memberCount: summary.memberCount,

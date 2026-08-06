@@ -120,7 +120,7 @@ export function ProjectDashboardView({
         <ProjectKpiGrid kpis={dashboard.kpis} />
       </section>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-5">
         <Card className="border-border/70 shadow-soft">
           <CardContent className="pt-4">
             <p className="text-xs text-muted-foreground">Houses</p>
@@ -147,11 +147,42 @@ export function ProjectDashboardView({
             <p className="text-2xl font-semibold">{dashboard.houseStats.completed}</p>
           </CardContent>
         </Card>
+        <Card className="border-border/70 shadow-soft">
+          <CardContent className="pt-4">
+            <p className="text-xs text-muted-foreground">Inspections</p>
+            <p className="text-2xl font-semibold">
+              {dashboard.houseStats.placeholders.inspections}
+            </p>
+            <p className="text-[10px] text-muted-foreground">status count</p>
+          </CardContent>
+        </Card>
       </div>
-      <p className="text-xs text-muted-foreground">
-        Construction progress: {dashboard.houseStats.constructionProgressPercent}%
-        (placeholder until execution modules).
-      </p>
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        {(
+          [
+            ["Activities", dashboard.houseStats.placeholders.activities],
+            ["BOQ", dashboard.houseStats.placeholders.boq],
+            ["Materials", dashboard.houseStats.placeholders.materials],
+            ["Progress %", dashboard.houseStats.placeholders.progress],
+            [
+              "Budget",
+              dashboard.houseStats.placeholders.budget == null
+                ? "—"
+                : dashboard.houseStats.placeholders.budget,
+            ],
+            ["Constr. progress", `${dashboard.houseStats.constructionProgressPercent}%`],
+          ] as const
+        ).map(([label, value]) => (
+          <Card key={label} className="border-border/70 border-dashed shadow-soft">
+            <CardContent className="pt-4">
+              <p className="text-xs text-muted-foreground">{label}</p>
+              <p className="text-xl font-semibold">{value}</p>
+              <p className="text-[10px] text-muted-foreground">placeholder</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card className="border-border/70 shadow-soft">

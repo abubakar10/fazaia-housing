@@ -22,9 +22,9 @@
 | **P0** | Approval | Architecture sign-off | — |
 | **P1** | 0–4 | Platform, IAM, Org | 2–3 weeks |
 | **P2** | 5–9 | Project structure & parties | 2–3 weeks |
-| **P3** | 10–14 | Construction execution | 3–4 weeks |
+| **P3** | 10–14 + **11A** | Construction execution + Yard Stick | 3–5 weeks |
 | **P4** | 15–23 | Store & inventory chain | 4–5 weeks |
-| **P5** | 24–26 | MB, billing, finance | 2–3 weeks |
+| **P5** | 24–26 + **24A/24B** | MB, RAR, Voucher, billing, finance | 3–4 weeks |
 | **P6** | 27–33 | Governance, reports, polish | 3–4 weeks |
 | **P7** | Hardening | Perf, security, UAT, prod | 2–3 weeks |
 
@@ -74,11 +74,12 @@
 |---|---|---|
 | 10 | BOQ | Tree editor + revision snapshots |
 | 11 | Activities | House activity progress rollup |
+| **11A** | **Yard Stick Management** | Templates + items (weight % / payment %); House Template binds one Yard Stick; activities inherit weights; version + effective date |
 | 12 | Inspection Requests | Full workflow + attachments |
 | 13 | DPR | Daily submit/approve |
 | 14 | WPR | Weekly submit/approve + export |
 
-**Milestone demo:** Contractor requests IR → QM passes → DPR reflects progress → house % updates.
+**Milestone demo:** Contractor requests IR → QM passes → DPR reflects progress → house % updates (Yard Stick–weighted).
 
 ---
 
@@ -104,11 +105,15 @@
 
 | Order | Module | Exit criteria |
 |---|---|---|
-| 24 | Measurement Book | Entries from BOQ |
-| 25 | Contractor Billing | Retention, approvals, history |
-| 26 | Finance | Budgets + payments + KPIs |
+| 24 | Measurement Book | Entries from BOQ; multi-level / amount-based approval hooks |
+| **24A** | **Running Account Receipt (RAR)** | MB → RAR → Approve; lines/deductions/adjustments/history; statuses through Paid/Cancelled |
+| **24B** | **Payment Voucher** | From approved RAR; taxes/retention/recoveries/charges; net payable server-calculated; printable voucher |
+| 25 | Contractor Billing | Retention, approvals, history (compatible with RAR path) |
+| 26 | Finance | Budgets + payments + KPIs; Contract Payment Engine wiring |
 
-**Milestone demo:** MB → Bill → Approve → Payment recorded; budget variance visible.
+**Milestone demo:** MB → RAR → Payment Voucher → Payment recorded; Progress Sheet export; budget variance visible.
+
+**Payment calculation chain (engine):** BOQ → MB → Yard Stick → RAR → Voucher → Payment (no manual totals).
 
 ---
 
@@ -119,10 +124,10 @@
 | 27 | HQ Directives | Ack tracking |
 | 28 | Notifications | In-app + email |
 | 29 | Documents | Upload/link/search |
-| 30 | Reports | PDF/Excel/CSV/Print for core reports |
-| 31 | Dashboards | Role-aware KPI pages |
+| 30 | Reports | PDF/Excel/CSV/Print including Progress Sheet, RAR/Voucher registers, retention, pending bills |
+| 31 | Dashboards | Role-aware KPI pages + commercial placeholders (RAR/Voucher/Progress/Retention/…) |
 | 32 | Audit Logs | Admin explorer |
-| 33 | Workflow Inbox | Unified tasks |
+| 33 | Workflow Inbox | Unified tasks including MB, RAR, Voucher, Payment |
 
 **Milestone demo:** Management dashboard + inbox-driven approvals across modules.
 

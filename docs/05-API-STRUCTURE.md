@@ -122,9 +122,11 @@ src/app/api/v1/
   employees/
   boq-headers/
   activities/
+  yardsticks/                 # reserved — Module 11A (do not implement yet)
   inspection-requests/
   daily-progress-reports/
   weekly-progress-reports/
+  progress-sheets/            # reserved — Progress Sheet generate/export
   warehouses/
   materials/
   material-categories/
@@ -136,6 +138,8 @@ src/app/api/v1/
   material-returns/
   inventory/
   measurement-books/
+  rars/                       # reserved — Module 24A
+  payment-vouchers/           # reserved — Module 24B
   contractor-bills/
   budgets/
   payments/
@@ -148,6 +152,8 @@ src/app/api/v1/
   dashboards/
   health/
 ```
+
+> **Reserved routes** are architecture placeholders only. Do not implement handlers until Modules 11A / 24A / 24B / Progress Sheet work is approved and scheduled.
 
 ---
 

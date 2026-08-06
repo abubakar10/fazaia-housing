@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   createHouseSchema,
+  createHouseTemplateSchema,
   createHouseTypeSchema,
   houseImportPreviewSchema,
   listHousesQuerySchema,
@@ -37,7 +38,7 @@ describe("house.schemas", () => {
     expect(result.plotNo).toBe("P-12");
   });
 
-  it("parses import preview rows", () => {
+  it("parses import preview rows as dry run by default", () => {
     const result = houseImportPreviewSchema.parse({
       projectId: UUID,
       rows: [
@@ -50,6 +51,20 @@ describe("house.schemas", () => {
       ],
     });
     expect(result.rows).toHaveLength(1);
+    expect(result.dryRun).toBe(true);
+  });
+
+  it("parses template with relational line items", () => {
+    const result = createHouseTemplateSchema.parse({
+      houseTypeId: UUID,
+      name: "Standard A",
+      activities: [{ name: "Excavation", quantity: 1, unit: "lot", sortOrder: 0 }],
+      boqItems: [{ name: "Concrete", quantity: 12.5, unit: "m3", sortOrder: 0 }],
+      materials: [{ name: "Cement", quantity: 50, unit: "bags", sortOrder: 0 }],
+    });
+    expect(result.activities).toHaveLength(1);
+    expect(result.boqItems?.[0]?.quantity).toBe(12.5);
+    expect(result.materials?.[0]?.name).toBe("Cement");
   });
 
   it("parses template revision", () => {

@@ -51,7 +51,8 @@ Spreadsheet-driven or fragmented tools fail under volume, concurrent workflows, 
 └─────────────────────────────────────────────────────────────────────────┘
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                     CONSTRUCTION EXECUTION                               │
-│  BOQ · Activities · IR · DPR · WPR · Measurement Book                   │
+│  BOQ · Activities · Yard Stick · IR · DPR · WPR · Measurement Book      │
+│  Progress Sheets                                                         │
 └─────────────────────────────────────────────────────────────────────────┘
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                     MATERIALS & STORE                                    │
@@ -60,7 +61,8 @@ Spreadsheet-driven or fragmented tools fail under volume, concurrent workflows, 
 └─────────────────────────────────────────────────────────────────────────┘
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                     COMMERCIAL & FINANCE                                 │
-│  Contractor Bills · Payments · Budgets · Cost Centers                   │
+│  RAR · Payment Vouchers · Contractor Bills · Payments · Budgets ·       │
+│  Contract Payment Engine                                                 │
 └─────────────────────────────────────────────────────────────────────────┘
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                     GOVERNANCE & COLLABORATION                           │
@@ -241,12 +243,15 @@ fazia-housing/
 │   │   ├── employees/
 │   │   ├── boq/
 │   │   ├── activities/
+│   │   ├── yardsticks/              # Module 11A (reserved)
 │   │   ├── inspections/
-│   │   ├── progress/
+│   │   ├── progress/                # DPR/WPR + Progress Sheets
 │   │   ├── store/
 │   │   ├── materials/
-│   │   ├── billing/
-│   │   ├── finance/
+│   │   ├── billing/                 # MB + Contractor Bills
+│   │   ├── rars/                    # Module 24A (reserved)
+│   │   ├── payment-vouchers/        # Module 24B (reserved)
+│   │   ├── finance/                 # includes Contract Payment Engine services
 │   │   ├── directives/
 │   │   ├── documents/
 │   │   ├── notifications/
@@ -362,6 +367,11 @@ BOQ & ACTIVITIES
   CRUD   /api/v1/activities
   CRUD   /api/v1/activity-schedules
 
+YARD STICK (Module 11A — reserved)
+  CRUD   /api/v1/yardsticks
+  CRUD   /api/v1/yardsticks/:id/items
+  POST   /api/v1/yardsticks/:id/revise
+
 INSPECTIONS
   CRUD   /api/v1/inspection-requests
   POST   /api/v1/inspection-requests/:id/submit|approve|reject|reinspect
@@ -371,6 +381,7 @@ PROGRESS
   POST   /api/v1/daily-progress-reports/:id/submit|approve
   CRUD   /api/v1/weekly-progress-reports
   POST   /api/v1/weekly-progress-reports/:id/submit|approve
+  CRUD   /api/v1/progress-sheets          # reserved (generate + export)
 
 STORE / MATERIALS
   CRUD   /api/v1/warehouses
@@ -386,13 +397,20 @@ STORE / MATERIALS
   GET    /api/v1/inventory/ledger
   GET    /api/v1/inventory/balances
 
-BILLING / MB / FINANCE
+BILLING / MB / RAR / VOUCHER / FINANCE
   CRUD   /api/v1/measurement-books
   CRUD   /api/v1/measurement-books/:id/entries
+  POST   /api/v1/measurement-books/:id/submit|approve
+  CRUD   /api/v1/rars                     # reserved Module 24A
+  POST   /api/v1/rars/:id/submit|verify|approve|cancel
+  CRUD   /api/v1/payment-vouchers         # reserved Module 24B
+  POST   /api/v1/payment-vouchers/:id/submit|verify|approve|cancel
+  GET    /api/v1/payment-vouchers/:id/print
   CRUD   /api/v1/contractor-bills
   POST   /api/v1/contractor-bills/:id/submit|verify|approve|pay
   CRUD   /api/v1/budgets
   CRUD   /api/v1/payments
+  POST   /api/v1/payments/:id/submit|approve|post
 
 GOVERNANCE
   CRUD   /api/v1/directives

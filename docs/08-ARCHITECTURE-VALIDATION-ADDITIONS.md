@@ -166,6 +166,10 @@ Additive endpoints under `/api/v1` (same conventions):
 | A-28 | `POST /documents/:id/link` / `DELETE link` | Manage document links |
 | A-29 | `GET /dashboards/:key` already defined — add `GET /dashboards/:key/widgets/:widgetId` if widget-level refresh needed |
 | A-30 | Comments: `GET/POST /{resource}/:id/comments` | Document timeline |
+| A-31 | `CRUD /yardsticks`, `.../:id/items`, `POST .../revise` | Module 11A (reserved) |
+| A-32 | `CRUD /rars` + submit/verify/approve/cancel + history | Module 24A (reserved) |
+| A-33 | `CRUD /payment-vouchers` + workflow + print | Module 24B (reserved) |
+| A-34 | `CRUD /progress-sheets` + export | Progress Sheet (reserved) |
 
 ---
 
@@ -193,6 +197,16 @@ Extend Module 30 report catalog:
 | RP-16 | Audit activity summary |
 | RP-17 | Low-stock & stock-out incidents |
 | RP-18 | Advance/mobilization vs recovery (if advances used) |
+| RP-19 | **Progress Sheet** (PDF/XLSX) |
+| RP-20 | **RAR Register** |
+| RP-21 | **Voucher Register** |
+| RP-22 | **Contractor Ledger** (RAR + Voucher + Bill + Payment) |
+| RP-23 | **House Progress Summary** |
+| RP-24 | **Activity Completion Summary** |
+| RP-25 | **Material Consumption Summary** |
+| RP-26 | **Mobilization Recovery** |
+| RP-27 | **Retention Register** (extended) |
+| RP-28 | **Pending Bills** (RAR/Voucher/Bill) |
 
 ---
 
@@ -223,13 +237,21 @@ Additive KPIs on existing dashboards (no dashboard redesign):
 - Outstanding payable
 - Retention outstanding
 - Budget utilization by cost center
+- **RAR Pending**
+- **Payment Pending**
+- **Voucher Pending**
+- **Recovery Amount**
+- **Mobilization Advance**
+- **Top Contractors** (by voucher/RAR volume)
 
 ### Construction
 - First-pass IR yield
 - Rework / reinspect rate
 - Weighted progress vs baseline schedule (when schedules exist)
 - Contractor-wise completion
-
+- **Progress %** (Yard Stick–weighted)
+- **Delayed Houses**
+- **Delayed Activities**
 ---
 
 ## G. Missing Workflows (ADD)
@@ -237,10 +259,13 @@ Additive KPIs on existing dashboards (no dashboard redesign):
 | ID | Document | States / notes |
 |---|---|---|
 | W-01 | BOQ | Draft → Submit → Approve (reject/revise) |
-| W-02 | MB | Draft → Submit → Approve |
+| W-02 | MB | Draft → Submit → Approve (multi-level / amount-based) |
+| W-02A | **RAR** | Draft → Submitted → Verified → Approved → Paid / Cancelled |
+| W-02B | **Payment Voucher** | Draft → Submitted → Verified → Approved → Paid / Cancelled |
 | W-03 | MR / DV | Draft → Submit → Approve / Reject (explicit) |
 | W-04 | Budget | Draft → Submit → Approve |
 | W-05 | Payment | Draft → Submit → Approve → Posted |
+| W-05A | Yard Stick Template | Draft → Active → Archived (version revise) |
 | W-06 | Stock Adjustment / Transfer | Draft → Submit → Approve → Post |
 | W-07 | Retention Release | Draft → Submit → Verify → Approve → Posted |
 | W-08 | Directive | Draft → Published → Closed (+ acknowledgements) |
@@ -283,6 +308,10 @@ Enforce in Zod + services:
 | V-24 | Project ARCHIVED → read-only |
 | V-25 | Timezone: store UTC; project-local date rules for DPR `reportDate` |
 | V-26 | Decimal scale: qty 3 dp, money 2 dp, unitCost 4 dp (server round half-up) |
+| V-27 | Yard Stick weight % / payment % sums validated per template policy (typically ≈ 100%) |
+| V-28 | RAR/Voucher net amounts must equal Payment Engine output (reject manual override) |
+| V-29 | Payment Voucher requires Approved RAR when created from RAR path |
+| V-30 | HouseTemplate.yardStickTemplateId required before payment-capable seeding (once 11A live) |
 
 ---
 
@@ -325,6 +354,25 @@ comments.manage
 search.use
 notifications.broadcast
 warehouses.post  // warehouse-scoped posting
+yardsticks.read
+yardsticks.manage
+yardsticks.revise
+rars.read
+rars.create
+rars.submit
+rars.verify
+rars.approve
+rars.cancel
+payment_vouchers.read
+payment_vouchers.create
+payment_vouchers.submit
+payment_vouchers.verify
+payment_vouchers.approve
+payment_vouchers.cancel
+payment_vouchers.print
+progress_sheets.read
+progress_sheets.generate
+progress_sheets.export
 ```
 
 Role seed updates during Module 3 / UAT — do not remove existing permissions.

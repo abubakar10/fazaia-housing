@@ -11,7 +11,6 @@ import {
   allocateHouseTemplateCode,
   allocateHouseTypeCode,
 } from "@/infrastructure/numbering/number-sequence.service";
-import type { Prisma } from "@prisma/client";
 import { toHouseTemplateDto, toHouseTypeDto } from "../mappers";
 import {
   clearDefaultTemplates,
@@ -26,6 +25,7 @@ import {
   listHouseTemplates,
   listHouseTypes,
   listTemplateRevisions,
+  replaceTemplateLines,
   softDeleteHouseTemplate,
   softDeleteHouseType,
   updateHouseTemplate,
@@ -37,6 +37,9 @@ import type {
   ListHouseTemplatesQuery,
   ListHouseTypesQuery,
   ReviseHouseTemplateInput,
+  TemplateActivityInput,
+  TemplateBoqInput,
+  TemplateMaterialInput,
   UpdateHouseTemplateInput,
   UpdateHouseTypeInput,
 } from "../schemas/house.schemas";
@@ -63,6 +66,36 @@ function listMeta(
     sort,
     order,
   };
+}
+
+function linesFromExisting(existing: NonNullable<Awaited<ReturnType<typeof getHouseTemplateById>>>) {
+  const activities: TemplateActivityInput[] = (existing.activities ?? []).map((a) => ({
+    code: a.code,
+    name: a.name,
+    description: a.description,
+    quantity: Number(a.quantity),
+    unit: a.unit,
+    estimatedDurationDays: a.estimatedDurationDays,
+    sortOrder: a.sortOrder,
+  }));
+  const boqItems: TemplateBoqInput[] = (existing.boqItems ?? []).map((b) => ({
+    code: b.code,
+    name: b.name,
+    description: b.description,
+    quantity: Number(b.quantity),
+    unit: b.unit,
+    unitRate: b.unitRate != null ? Number(b.unitRate) : null,
+    sortOrder: b.sortOrder,
+  }));
+  const materials: TemplateMaterialInput[] = (existing.materials ?? []).map((m) => ({
+    code: m.code,
+    name: m.name,
+    description: m.description,
+    quantity: Number(m.quantity),
+    unit: m.unit,
+    sortOrder: m.sortOrder,
+  }));
+  return { activities, boqItems, materials };
 }
 
 export const houseTypesService = {
@@ -246,25 +279,29 @@ export const houseTemplatesService = {
 
     if (input.isDefault) await clearDefaultTemplates(input.houseTypeId);
 
-    const row = await createHouseTemplate({
-      code,
-      name: input.name,
-      version,
-      status: input.status ?? "DRAFT",
-      estimatedDurationDays: input.estimatedDurationDays ?? null,
-      estimatedCost: input.estimatedCost ?? null,
-      defaultActivities: (input.defaultActivities as Prisma.InputJsonValue) ?? undefined,
-      defaultBoq: (input.defaultBoq as Prisma.InputJsonValue) ?? undefined,
-      defaultMaterials: (input.defaultMaterials as Prisma.InputJsonValue) ?? undefined,
-      isDefault: input.isDefault ?? false,
-      description: input.description ?? null,
-      createdById: actor.id,
-      updatedById: actor.id,
-      houseType: { connect: { id: input.houseTypeId } },
-      ...(input.projectId ?? houseType.projectId
-        ? { project: { connect: { id: (input.projectId ?? houseType.projectId)! } } }
-        : {}),
-    });
+    const row = await createHouseTemplate(
+      {
+        code,
+        name: input.name,
+        version,
+        status: input.status ?? "DRAFT",
+        estimatedDurationDays: input.estimatedDurationDays ?? null,
+        estimatedCost: input.estimatedCost ?? null,
+        isDefault: input.isDefault ?? false,
+        description: input.description ?? null,
+        createdById: actor.id,
+        updatedById: actor.id,
+        houseType: { connect: { id: input.houseTypeId } },
+        ...(input.projectId ?? houseType.projectId
+          ? { project: { connect: { id: (input.projectId ?? houseType.projectId)! } } }
+          : {}),
+      },
+      {
+        activities: input.activities,
+        boqItems: input.boqItems,
+        materials: input.materials,
+      },
+    );
 
     if (input.isDefault) {
       await updateHouseType(input.houseTypeId, {
@@ -278,7 +315,13 @@ export const houseTemplatesService = {
       entityType: "HouseTemplate",
       entityId: row.id,
       projectId: houseType.projectId,
-      after: { code: row.code, version: row.version },
+      after: {
+        code: row.code,
+        version: row.version,
+        activityCount: input.activities?.length ?? 0,
+        boqCount: input.boqItems?.length ?? 0,
+        materialCount: input.materials?.length ?? 0,
+      },
     });
 
     return toHouseTemplateDto(row);
@@ -291,7 +334,7 @@ export const houseTemplatesService = {
 
     if (input.isDefault) await clearDefaultTemplates(existing.houseTypeId, id);
 
-    const row = await updateHouseTemplate(id, {
+    await updateHouseTemplate(id, {
       ...(input.code !== undefined ? { code: input.code.toUpperCase() } : {}),
       ...(input.name !== undefined ? { name: input.name } : {}),
       ...(input.status !== undefined ? { status: input.status } : {}),
@@ -299,23 +342,29 @@ export const houseTemplatesService = {
         ? { estimatedDurationDays: input.estimatedDurationDays }
         : {}),
       ...(input.estimatedCost !== undefined ? { estimatedCost: input.estimatedCost } : {}),
-      ...(input.defaultActivities !== undefined
-        ? { defaultActivities: input.defaultActivities as Prisma.InputJsonValue }
-        : {}),
-      ...(input.defaultBoq !== undefined
-        ? { defaultBoq: input.defaultBoq as Prisma.InputJsonValue }
-        : {}),
-      ...(input.defaultMaterials !== undefined
-        ? { defaultMaterials: input.defaultMaterials as Prisma.InputJsonValue }
-        : {}),
       ...(input.isDefault !== undefined ? { isDefault: input.isDefault } : {}),
       ...(input.description !== undefined ? { description: input.description } : {}),
       updatedById: actor.id,
     });
 
+    const hasLineUpdates =
+      input.activities !== undefined ||
+      input.boqItems !== undefined ||
+      input.materials !== undefined;
+
+    const row = hasLineUpdates
+      ? await replaceTemplateLines(id, {
+          activities: input.activities,
+          boqItems: input.boqItems,
+          materials: input.materials,
+        })
+      : await getHouseTemplateById(id);
+
+    if (!row) throw new NotFoundError("HouseTemplate", id);
+
     if (input.isDefault) {
       await updateHouseType(existing.houseTypeId, {
-        defaultTemplate: { connect: { id: id } },
+        defaultTemplate: { connect: { id } },
       });
     }
 
@@ -338,40 +387,36 @@ export const houseTemplatesService = {
 
     const rootId = existing.revisionOfId ?? existing.id;
     const version = await getNextTemplateVersion(existing.houseTypeId, existing.code);
+    const copied = linesFromExisting(existing);
 
     await updateHouseTemplate(id, { status: "ARCHIVED", updatedById: actor.id });
 
-    const row = await createHouseTemplate({
-      code: existing.code,
-      name: input.name ?? existing.name,
-      version,
-      status: input.activate ? "ACTIVE" : "DRAFT",
-      estimatedDurationDays:
-        input.estimatedDurationDays ?? existing.estimatedDurationDays,
-      estimatedCost: input.estimatedCost ?? existing.estimatedCost,
-      defaultActivities:
-        (input.defaultActivities as Prisma.InputJsonValue) ??
-        (existing.defaultActivities as Prisma.InputJsonValue) ??
-        undefined,
-      defaultBoq:
-        (input.defaultBoq as Prisma.InputJsonValue) ??
-        (existing.defaultBoq as Prisma.InputJsonValue) ??
-        undefined,
-      defaultMaterials:
-        (input.defaultMaterials as Prisma.InputJsonValue) ??
-        (existing.defaultMaterials as Prisma.InputJsonValue) ??
-        undefined,
-      revisionNote: input.revisionNote ?? null,
-      isDefault: existing.isDefault,
-      description: existing.description,
-      createdById: actor.id,
-      updatedById: actor.id,
-      houseType: { connect: { id: existing.houseTypeId } },
-      revisionOf: { connect: { id: rootId } },
-      ...(existing.projectId
-        ? { project: { connect: { id: existing.projectId } } }
-        : {}),
-    });
+    const row = await createHouseTemplate(
+      {
+        code: existing.code,
+        name: input.name ?? existing.name,
+        version,
+        status: input.activate ? "ACTIVE" : "DRAFT",
+        estimatedDurationDays:
+          input.estimatedDurationDays ?? existing.estimatedDurationDays,
+        estimatedCost: input.estimatedCost ?? existing.estimatedCost,
+        revisionNote: input.revisionNote ?? null,
+        isDefault: existing.isDefault,
+        description: existing.description,
+        createdById: actor.id,
+        updatedById: actor.id,
+        houseType: { connect: { id: existing.houseTypeId } },
+        revisionOf: { connect: { id: rootId } },
+        ...(existing.projectId
+          ? { project: { connect: { id: existing.projectId } } }
+          : {}),
+      },
+      {
+        activities: input.activities ?? copied.activities,
+        boqItems: input.boqItems ?? copied.boqItems,
+        materials: input.materials ?? copied.materials,
+      },
+    );
 
     if (existing.isDefault) {
       await updateHouseType(existing.houseTypeId, {

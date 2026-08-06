@@ -29,6 +29,37 @@ const codeSchema = z
 const optionalCodeSchema = codeSchema.optional().nullable();
 const optionalDecimal = z.coerce.number().min(0).max(1_000_000_000).optional().nullable();
 const optionalInt = z.coerce.number().int().min(0).max(1000).optional().nullable();
+const quantitySchema = z.coerce.number().min(0).max(1_000_000_000).default(1);
+const sortOrderSchema = z.coerce.number().int().min(0).max(1_000_000).default(0);
+
+export const templateActivityInputSchema = z.object({
+  code: z.string().trim().max(64).optional().nullable(),
+  name: z.string().trim().min(1).max(200),
+  description: z.string().trim().max(2000).optional().nullable(),
+  quantity: quantitySchema,
+  unit: z.string().trim().max(32).optional().nullable(),
+  estimatedDurationDays: optionalInt,
+  sortOrder: sortOrderSchema,
+});
+
+export const templateBoqInputSchema = z.object({
+  code: z.string().trim().max(64).optional().nullable(),
+  name: z.string().trim().min(1).max(200),
+  description: z.string().trim().max(2000).optional().nullable(),
+  quantity: quantitySchema,
+  unit: z.string().trim().max(32).optional().nullable(),
+  unitRate: optionalDecimal,
+  sortOrder: sortOrderSchema,
+});
+
+export const templateMaterialInputSchema = z.object({
+  code: z.string().trim().max(64).optional().nullable(),
+  name: z.string().trim().min(1).max(200),
+  description: z.string().trim().max(2000).optional().nullable(),
+  quantity: quantitySchema,
+  unit: z.string().trim().max(32).optional().nullable(),
+  sortOrder: sortOrderSchema,
+});
 
 export const listHouseTypesQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
@@ -85,11 +116,11 @@ export const createHouseTemplateSchema = z.object({
   status: houseTemplateStatusSchema.optional(),
   estimatedDurationDays: optionalInt,
   estimatedCost: optionalDecimal,
-  defaultActivities: z.unknown().optional().nullable(),
-  defaultBoq: z.unknown().optional().nullable(),
-  defaultMaterials: z.unknown().optional().nullable(),
   isDefault: z.boolean().optional(),
   description: z.string().trim().max(5000).optional().nullable(),
+  activities: z.array(templateActivityInputSchema).max(500).optional(),
+  boqItems: z.array(templateBoqInputSchema).max(500).optional(),
+  materials: z.array(templateMaterialInputSchema).max(500).optional(),
 });
 
 export const updateHouseTemplateSchema = z.object({
@@ -98,11 +129,11 @@ export const updateHouseTemplateSchema = z.object({
   status: houseTemplateStatusSchema.optional(),
   estimatedDurationDays: optionalInt,
   estimatedCost: optionalDecimal,
-  defaultActivities: z.unknown().optional().nullable(),
-  defaultBoq: z.unknown().optional().nullable(),
-  defaultMaterials: z.unknown().optional().nullable(),
   isDefault: z.boolean().optional(),
   description: z.string().trim().max(5000).optional().nullable(),
+  activities: z.array(templateActivityInputSchema).max(500).optional(),
+  boqItems: z.array(templateBoqInputSchema).max(500).optional(),
+  materials: z.array(templateMaterialInputSchema).max(500).optional(),
 });
 
 export const reviseHouseTemplateSchema = z.object({
@@ -110,10 +141,10 @@ export const reviseHouseTemplateSchema = z.object({
   name: z.string().trim().min(2).max(200).optional(),
   estimatedDurationDays: optionalInt,
   estimatedCost: optionalDecimal,
-  defaultActivities: z.unknown().optional().nullable(),
-  defaultBoq: z.unknown().optional().nullable(),
-  defaultMaterials: z.unknown().optional().nullable(),
   activate: z.boolean().optional().default(false),
+  activities: z.array(templateActivityInputSchema).max(500).optional(),
+  boqItems: z.array(templateBoqInputSchema).max(500).optional(),
+  materials: z.array(templateMaterialInputSchema).max(500).optional(),
 });
 
 export const listHousesQuerySchema = z.object({
@@ -194,11 +225,13 @@ export const houseImportRowSchema = z.object({
 export const houseImportPreviewSchema = z.object({
   projectId: z.string().uuid(),
   rows: z.array(houseImportRowSchema).min(1).max(5000),
+  dryRun: z.boolean().optional().default(true),
 });
 
 export const houseImportCommitSchema = z.object({
   projectId: z.string().uuid(),
   rows: z.array(houseImportRowSchema).min(1).max(5000),
+  dryRun: z.literal(false).optional(),
 });
 
 export const savedFilterSchema = z.object({
@@ -223,3 +256,6 @@ export type HouseImportPreviewInput = z.infer<typeof houseImportPreviewSchema>;
 export type HouseImportCommitInput = z.infer<typeof houseImportCommitSchema>;
 export type SavedFilterInput = z.infer<typeof savedFilterSchema>;
 export type HouseImportRow = z.infer<typeof houseImportRowSchema>;
+export type TemplateActivityInput = z.infer<typeof templateActivityInputSchema>;
+export type TemplateBoqInput = z.infer<typeof templateBoqInputSchema>;
+export type TemplateMaterialInput = z.infer<typeof templateMaterialInputSchema>;

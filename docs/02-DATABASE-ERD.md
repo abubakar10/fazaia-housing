@@ -79,6 +79,9 @@ erDiagram
   Project ||--o{ BoqHeader : has
   BoqHeader ||--o{ BoqItem : lines
   BoqItem ||--o{ Activity : maps
+  YardStickTemplate ||--o{ YardStickItem : items
+  YardStickItem }o--o| Activity : weights
+  HouseTemplate }o--o| YardStickTemplate : uses
   House ||--o{ HouseActivity : progress
   Activity ||--o{ HouseActivity : instance
   InspectionRequest }o--|| House : for
@@ -89,6 +92,8 @@ erDiagram
   WeeklyProgressReport ||--o{ WprLine : lines
   MeasurementBook }o--|| Project : for
   MeasurementBook ||--o{ MbEntry : entries
+  ProgressSheet }o--|| Project : for
+  ProgressSheet ||--o{ ProgressSheetLine : lines
 ```
 
 ### 2.4 Inventory
@@ -109,15 +114,25 @@ erDiagram
   InventoryLedger }o--|| Warehouse : at
 ```
 
-### 2.5 Billing, Finance, Governance
+### 2.5 Billing, RAR, Voucher, Finance, Governance
 
 ```mermaid
 erDiagram
+  MeasurementBook ||--o{ RunningAccountReceipt : feeds
+  RunningAccountReceipt ||--o{ RARLine : lines
+  RunningAccountReceipt ||--o{ RARDeduction : deductions
+  RunningAccountReceipt ||--o{ RARAdjustment : adjustments
+  RunningAccountReceipt ||--o{ RARHistory : history
+  RunningAccountReceipt ||o--o| PaymentVoucher : vouchered
+  PaymentVoucher ||--o{ PaymentVoucherLine : lines
+  PaymentVoucher }o--|| Contractor : payee
   ContractorBill }o--|| Contractor : billed_by
   ContractorBill }o--|| Project : against
   ContractorBill ||--o{ ContractorBillLine : lines
   ContractorBill }o--o| MeasurementBook : based_on
-  Payment }o--|| ContractorBill : settles
+  ContractorBill }o--o| RunningAccountReceipt : optional_rar
+  Payment }o--o| ContractorBill : settles_bill
+  Payment }o--o| PaymentVoucher : settles_voucher
   Budget }o--|| Project : for
   Directive }o--|| Project : optional_scope
   Document ||--o{ DocumentLink : attached
@@ -162,6 +177,8 @@ Transition map stored as config (`WorkflowDefinition` / `WorkflowTransition`) so
 | Source | History | Trigger |
 |---|---|---|
 | `BoqHeader` / `BoqItem` | `BoqRevision` + `BoqItemRevision` | revise BOQ |
+| `YardStickTemplate` | new version row + item copy | revise yard stick |
+| `RunningAccountReceipt` | `RARHistory` | status/amount change |
 | `ContractorBill` | `ContractorBillHistory` | status/amount change |
 | `House` | `HouseStatusHistory` | status change |
 | `StockBalance` | via `InventoryLedger` | all movements |
@@ -199,13 +216,13 @@ Project, ProjectMember, Phase, Sector, Block, HouseType, House, HouseStatusHisto
 Contractor, ContractorAssignment, Employee, EmployeeAssignment
 
 ### Construction
-BoqHeader, BoqItem, BoqRevision, BoqItemRevision, Activity, ActivityDependency, HouseActivity, InspectionRequest, InspectionAttachment, DailyProgressReport, DprLine, WeeklyProgressReport, WprLine, MeasurementBook, MbEntry
+BoqHeader, BoqItem, BoqRevision, BoqItemRevision, Activity, ActivityDependency, HouseActivity, YardStickTemplate, YardStickItem, InspectionRequest, InspectionAttachment, DailyProgressReport, DprLine, WeeklyProgressReport, WprLine, MeasurementBook, MbEntry, ProgressSheet, ProgressSheetLine
 
 ### Inventory
 MaterialCategory, Material, Warehouse, StockBalance, Grn, GrnLine, MaterialRequisition, MrLine, DemandVoucher, DvLine, MaterialIssue, MiLine, MaterialConsumption, McLine, MaterialReturn, MretLine, InventoryLedger
 
-### Finance
-Budget, BudgetLine, ContractorBill, ContractorBillLine, ContractorBillHistory, Payment
+### Finance / Commercial
+Budget, BudgetLine, ContractorBill, ContractorBillLine, ContractorBillHistory, Payment, RunningAccountReceipt, RARLine, RARDeduction, RARAdjustment, RARHistory, PaymentVoucher, PaymentVoucherLine
 
 ### Governance
 Directive, DirectiveAcknowledgement, Document, DocumentLink, Notification, NotificationPreference, WorkflowDefinition, WorkflowTransition, WorkflowInstance, WorkflowTask, ReportDefinition (optional metadata)
@@ -216,5 +233,7 @@ Directive, DirectiveAcknowledgement, Document, DocumentLink, Notification, Notif
 
 - One House belongs to exactly one Block, Sector, Phase, Project (denormalize `projectId` on House for query speed; Block implies the rest — keep both with integrity checks in service).
 - BOQ can be project-level or house-type-level (`scopeType`).
+- Each `HouseTemplate` references **at most one** active `YardStickTemplate` (required once Module 11A is live for payment-capable templates).
 - ContractorAssignment binds contractor to project (and optionally phase/sector).
 - Material master is global; stock is per warehouse (warehouses belong to project or central store).
+- One approved MB may spawn one or more RARs; one approved RAR typically produces one Payment Voucher; Payment may settle voucher and/or legacy bill.

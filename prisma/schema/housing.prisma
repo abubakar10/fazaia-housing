@@ -30,29 +30,29 @@ enum HouseStatus {
 }
 
 model HouseType {
-  id               String            @id @default(uuid()) @db.Uuid
-  projectId        String?           @db.Uuid
-  code             String
-  name             String
-  category         HouseTypeCategory @default(RESIDENTIAL)
-  coveredArea      Decimal?          @db.Decimal(12, 2)
-  plotSize         Decimal?          @db.Decimal(12, 2)
-  bedrooms         Int?
-  bathrooms        Int?
-  floors           Int?
-  drawingNumber    String?
-  description      String?
-  status           HouseTypeStatus   @default(ACTIVE)
-  defaultTemplateId String?          @db.Uuid
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  deletedAt        DateTime?
-  createdById      String?           @db.Uuid
-  updatedById      String?           @db.Uuid
+  id                String            @id @default(uuid()) @db.Uuid
+  projectId         String?           @db.Uuid
+  code              String
+  name              String
+  category          HouseTypeCategory @default(RESIDENTIAL)
+  coveredArea       Decimal?          @db.Decimal(12, 2)
+  plotSize          Decimal?          @db.Decimal(12, 2)
+  bedrooms          Int?
+  bathrooms         Int?
+  floors            Int?
+  drawingNumber     String?
+  description       String?
+  status            HouseTypeStatus   @default(ACTIVE)
+  defaultTemplateId String?           @db.Uuid
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  deletedAt         DateTime?
+  createdById       String?           @db.Uuid
+  updatedById       String?           @db.Uuid
 
-  project         Project?         @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  defaultTemplate HouseTemplate?   @relation("HouseTypeDefaultTemplate", fields: [defaultTemplateId], references: [id], onDelete: SetNull)
-  templates       HouseTemplate[]  @relation("HouseTypeTemplates")
+  project         Project?        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  defaultTemplate HouseTemplate?  @relation("HouseTypeDefaultTemplate", fields: [defaultTemplateId], references: [id], onDelete: SetNull)
+  templates       HouseTemplate[] @relation("HouseTypeTemplates")
   houses          House[]
 
   @@unique([projectId, code])
@@ -64,37 +64,34 @@ model HouseType {
 }
 
 model HouseTemplate {
-  id                     String              @id @default(uuid()) @db.Uuid
-  houseTypeId            String              @db.Uuid
-  projectId              String?             @db.Uuid
-  code                   String
-  name                   String
-  version                Int                 @default(1)
-  status                 HouseTemplateStatus @default(DRAFT)
-  estimatedDurationDays  Int?
-  estimatedCost          Decimal?            @db.Decimal(14, 2)
-  /// Placeholder for future Module 11 activity seeding.
-  defaultActivities      Json?
-  /// Placeholder for future Module 10 BOQ seeding.
-  defaultBoq             Json?
-  /// Placeholder for future material plan seeding.
-  defaultMaterials       Json?
-  revisionOfId           String?             @db.Uuid
-  revisionNote           String?
-  isDefault              Boolean             @default(false)
-  description            String?
-  createdAt              DateTime            @default(now())
-  updatedAt              DateTime            @updatedAt
-  deletedAt              DateTime?
-  createdById            String?             @db.Uuid
-  updatedById            String?             @db.Uuid
+  id                    String              @id @default(uuid()) @db.Uuid
+  houseTypeId           String              @db.Uuid
+  projectId             String?             @db.Uuid
+  code                  String
+  name                  String
+  version               Int                 @default(1)
+  status                HouseTemplateStatus @default(DRAFT)
+  estimatedDurationDays Int?
+  estimatedCost         Decimal?            @db.Decimal(14, 2)
+  revisionOfId          String?             @db.Uuid
+  revisionNote          String?
+  isDefault             Boolean             @default(false)
+  description           String?
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+  deletedAt             DateTime?
+  createdById           String?             @db.Uuid
+  updatedById           String?             @db.Uuid
 
-  houseType       HouseType      @relation("HouseTypeTemplates", fields: [houseTypeId], references: [id], onDelete: Cascade)
-  project         Project?       @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  revisionOf      HouseTemplate? @relation("TemplateRevisions", fields: [revisionOfId], references: [id])
-  revisions       HouseTemplate[] @relation("TemplateRevisions")
-  defaultForTypes HouseType[]    @relation("HouseTypeDefaultTemplate")
+  houseType       HouseType                 @relation("HouseTypeTemplates", fields: [houseTypeId], references: [id], onDelete: Cascade)
+  project         Project?                  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  revisionOf      HouseTemplate?            @relation("TemplateRevisions", fields: [revisionOfId], references: [id])
+  revisions       HouseTemplate[]           @relation("TemplateRevisions")
+  defaultForTypes HouseType[]               @relation("HouseTypeDefaultTemplate")
   houses          House[]
+  activities      HouseTemplateActivity[]
+  boqItems        HouseTemplateBOQ[]
+  materials       HouseTemplateMaterial[]
 
   @@unique([houseTypeId, code, version])
   @@index([houseTypeId, deletedAt])
@@ -102,6 +99,65 @@ model HouseTemplate {
   @@index([status, deletedAt])
   @@index([revisionOfId])
   @@index([createdAt])
+}
+
+/// Reusable activity definition on a house template (not execution).
+model HouseTemplateActivity {
+  id                    String   @id @default(uuid()) @db.Uuid
+  houseTemplateId       String   @db.Uuid
+  code                  String?
+  name                  String
+  description           String?
+  quantity              Decimal  @default(1) @db.Decimal(14, 4)
+  unit                  String?
+  estimatedDurationDays Int?
+  sortOrder             Int      @default(0)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  houseTemplate HouseTemplate @relation(fields: [houseTemplateId], references: [id], onDelete: Cascade)
+
+  @@index([houseTemplateId, sortOrder])
+  @@index([houseTemplateId, code])
+}
+
+/// Reusable BOQ line on a house template (not execution / costing engine).
+model HouseTemplateBOQ {
+  id              String   @id @default(uuid()) @db.Uuid
+  houseTemplateId String   @db.Uuid
+  code            String?
+  name            String
+  description     String?
+  quantity        Decimal  @default(1) @db.Decimal(14, 4)
+  unit            String?
+  unitRate        Decimal? @db.Decimal(14, 2)
+  sortOrder       Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  houseTemplate HouseTemplate @relation(fields: [houseTemplateId], references: [id], onDelete: Cascade)
+
+  @@index([houseTemplateId, sortOrder])
+  @@index([houseTemplateId, code])
+}
+
+/// Reusable material line on a house template (not inventory / issuance).
+model HouseTemplateMaterial {
+  id              String   @id @default(uuid()) @db.Uuid
+  houseTemplateId String   @db.Uuid
+  code            String?
+  name            String
+  description     String?
+  quantity        Decimal  @default(1) @db.Decimal(14, 4)
+  unit            String?
+  sortOrder       Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  houseTemplate HouseTemplate @relation(fields: [houseTemplateId], references: [id], onDelete: Cascade)
+
+  @@index([houseTemplateId, sortOrder])
+  @@index([houseTemplateId, code])
 }
 
 model House {
@@ -130,20 +186,27 @@ model House {
   createdById         String?      @db.Uuid
   updatedById         String?      @db.Uuid
 
-  project       Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  phase         Phase              @relation(fields: [phaseId], references: [id])
-  sector        Sector             @relation(fields: [sectorId], references: [id])
-  block         Block              @relation(fields: [blockId], references: [id])
-  houseType     HouseType          @relation(fields: [houseTypeId], references: [id])
-  houseTemplate HouseTemplate?     @relation(fields: [houseTemplateId], references: [id])
+  project       Project              @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  phase         Phase                @relation(fields: [phaseId], references: [id])
+  sector        Sector               @relation(fields: [sectorId], references: [id])
+  block         Block                @relation(fields: [blockId], references: [id])
+  houseType     HouseType            @relation(fields: [houseTypeId], references: [id])
+  houseTemplate HouseTemplate?       @relation(fields: [houseTemplateId], references: [id])
   statusHistory HouseStatusHistory[]
 
   @@unique([blockId, code])
   @@index([projectId, status, deletedAt])
   @@index([projectId, deletedAt])
+  @@index([projectId, houseTypeId, deletedAt])
+  @@index([projectId, phaseId, deletedAt])
+  @@index([projectId, blockId, deletedAt])
+  @@index([projectId, code])
+  @@index([projectId, plotNo])
+  @@index([projectId, status, createdAt])
   @@index([phaseId, deletedAt])
   @@index([sectorId, deletedAt])
   @@index([blockId, deletedAt])
+  @@index([blockId, plotNo])
   @@index([houseTypeId])
   @@index([houseTemplateId])
   @@index([plotNo])

@@ -4,6 +4,9 @@ import type {
   ListHousesQuery,
   ListHouseTemplatesQuery,
   ListHouseTypesQuery,
+  TemplateActivityInput,
+  TemplateBoqInput,
+  TemplateMaterialInput,
 } from "../schemas/house.schemas";
 
 const houseTypeInclude = {
@@ -15,8 +18,33 @@ const houseTypeInclude = {
   },
 } satisfies Prisma.HouseTypeInclude;
 
-const houseTemplateInclude = {
+const templateLineInclude = {
+  activities: { orderBy: { sortOrder: "asc" as const } },
+  boqItems: { orderBy: { sortOrder: "asc" as const } },
+  materials: { orderBy: { sortOrder: "asc" as const } },
+  _count: {
+    select: {
+      activities: true,
+      boqItems: true,
+      materials: true,
+    },
+  },
+} satisfies Prisma.HouseTemplateInclude;
+
+const houseTemplateListInclude = {
   houseType: { select: { id: true, code: true, name: true } },
+  _count: {
+    select: {
+      activities: true,
+      boqItems: true,
+      materials: true,
+    },
+  },
+} satisfies Prisma.HouseTemplateInclude;
+
+const houseTemplateDetailInclude = {
+  houseType: { select: { id: true, code: true, name: true } },
+  ...templateLineInclude,
 } satisfies Prisma.HouseTemplateInclude;
 
 const houseInclude = {
@@ -24,12 +52,26 @@ const houseInclude = {
   sector: { select: { id: true, code: true, name: true } },
   block: { select: { id: true, code: true, name: true } },
   houseType: { select: { id: true, code: true, name: true } },
-  houseTemplate: { select: { id: true, code: true, name: true, version: true } },
+  houseTemplate: {
+    select: {
+      id: true,
+      code: true,
+      name: true,
+      version: true,
+      _count: {
+        select: {
+          activities: true,
+          boqItems: true,
+          materials: true,
+        },
+      },
+    },
+  },
 } satisfies Prisma.HouseInclude;
 
 export type HouseTypeRecord = Prisma.HouseTypeGetPayload<{ include: typeof houseTypeInclude }>;
 export type HouseTemplateRecord = Prisma.HouseTemplateGetPayload<{
-  include: typeof houseTemplateInclude;
+  include: typeof houseTemplateDetailInclude;
 }>;
 export type HouseRecord = Prisma.HouseGetPayload<{ include: typeof houseInclude }>;
 
@@ -130,7 +172,7 @@ export async function listHouseTemplates(query: ListHouseTemplatesQuery) {
     prisma.houseTemplate.count({ where }),
     prisma.houseTemplate.findMany({
       where,
-      include: houseTemplateInclude,
+      include: houseTemplateListInclude,
       orderBy: { [query.sort]: query.order },
       skip: (query.page - 1) * query.pageSize,
       take: query.pageSize,
@@ -143,7 +185,7 @@ export async function listHouseTemplates(query: ListHouseTemplatesQuery) {
 export async function getHouseTemplateById(id: string) {
   return prisma.houseTemplate.findFirst({
     where: { id, deletedAt: null },
-    include: houseTemplateInclude,
+    include: houseTemplateDetailInclude,
   });
 }
 
@@ -156,21 +198,124 @@ export async function listTemplateRevisions(templateId: string) {
       deletedAt: null,
       OR: [{ id: rootId }, { revisionOfId: rootId }],
     },
-    include: houseTemplateInclude,
+    include: houseTemplateListInclude,
     orderBy: { version: "desc" },
   });
 }
 
-export async function createHouseTemplate(data: Prisma.HouseTemplateCreateInput) {
-  return prisma.houseTemplate.create({ data, include: houseTemplateInclude });
+function mapActivityCreates(items: TemplateActivityInput[]) {
+  return items.map((item, index) => ({
+    code: item.code ?? null,
+    name: item.name,
+    description: item.description ?? null,
+    quantity: item.quantity,
+    unit: item.unit ?? null,
+    estimatedDurationDays: item.estimatedDurationDays ?? null,
+    sortOrder: item.sortOrder ?? index,
+  }));
+}
+
+function mapBoqCreates(items: TemplateBoqInput[]) {
+  return items.map((item, index) => ({
+    code: item.code ?? null,
+    name: item.name,
+    description: item.description ?? null,
+    quantity: item.quantity,
+    unit: item.unit ?? null,
+    unitRate: item.unitRate ?? null,
+    sortOrder: item.sortOrder ?? index,
+  }));
+}
+
+function mapMaterialCreates(items: TemplateMaterialInput[]) {
+  return items.map((item, index) => ({
+    code: item.code ?? null,
+    name: item.name,
+    description: item.description ?? null,
+    quantity: item.quantity,
+    unit: item.unit ?? null,
+    sortOrder: item.sortOrder ?? index,
+  }));
+}
+
+export async function createHouseTemplate(
+  data: Prisma.HouseTemplateCreateInput,
+  lines?: {
+    activities?: TemplateActivityInput[];
+    boqItems?: TemplateBoqInput[];
+    materials?: TemplateMaterialInput[];
+  },
+) {
+  return prisma.houseTemplate.create({
+    data: {
+      ...data,
+      ...(lines?.activities?.length
+        ? { activities: { create: mapActivityCreates(lines.activities) } }
+        : {}),
+      ...(lines?.boqItems?.length
+        ? { boqItems: { create: mapBoqCreates(lines.boqItems) } }
+        : {}),
+      ...(lines?.materials?.length
+        ? { materials: { create: mapMaterialCreates(lines.materials) } }
+        : {}),
+    },
+    include: houseTemplateDetailInclude,
+  });
 }
 
 export async function updateHouseTemplate(id: string, data: Prisma.HouseTemplateUpdateInput) {
   return prisma.houseTemplate.update({
     where: { id },
     data,
-    include: houseTemplateInclude,
+    include: houseTemplateDetailInclude,
   });
+}
+
+export async function replaceTemplateLines(
+  templateId: string,
+  lines: {
+    activities?: TemplateActivityInput[];
+    boqItems?: TemplateBoqInput[];
+    materials?: TemplateMaterialInput[];
+  },
+) {
+  await prisma.$transaction(async (tx) => {
+    if (lines.activities) {
+      await tx.houseTemplateActivity.deleteMany({ where: { houseTemplateId: templateId } });
+      if (lines.activities.length) {
+        await tx.houseTemplateActivity.createMany({
+          data: mapActivityCreates(lines.activities).map((row) => ({
+            ...row,
+            houseTemplateId: templateId,
+          })),
+        });
+      }
+    }
+    if (lines.boqItems) {
+      await tx.houseTemplateBOQ.deleteMany({ where: { houseTemplateId: templateId } });
+      if (lines.boqItems.length) {
+        await tx.houseTemplateBOQ.createMany({
+          data: mapBoqCreates(lines.boqItems).map((row) => ({
+            ...row,
+            houseTemplateId: templateId,
+          })),
+        });
+      }
+    }
+    if (lines.materials) {
+      await tx.houseTemplateMaterial.deleteMany({ where: { houseTemplateId: templateId } });
+      if (lines.materials.length) {
+        await tx.houseTemplateMaterial.createMany({
+          data: mapMaterialCreates(lines.materials).map((row) => ({
+            ...row,
+            houseTemplateId: templateId,
+          })),
+        });
+      }
+    }
+  });
+
+  return getHouseTemplateById(templateId);
 }
 
 export async function clearDefaultTemplates(houseTypeId: string, exceptId?: string) {
@@ -189,7 +334,7 @@ export async function softDeleteHouseTemplate(id: string, updatedById?: string |
   return prisma.houseTemplate.update({
     where: { id },
     data: { deletedAt: new Date(), updatedById },
-    include: houseTemplateInclude,
+    include: houseTemplateDetailInclude,
   });
 }
 
@@ -255,9 +400,7 @@ export async function createHouse(data: Prisma.HouseCreateInput) {
   return prisma.house.create({ data, include: houseInclude });
 }
 
-export async function createHousesMany(
-  rows: Prisma.HouseCreateManyInput[],
-) {
+export async function createHousesMany(rows: Prisma.HouseCreateManyInput[]) {
   return prisma.house.createMany({ data: rows, skipDuplicates: true });
 }
 
@@ -270,6 +413,14 @@ export async function softDeleteHouse(id: string, updatedById?: string | null) {
     where: { id },
     data: { deletedAt: new Date(), updatedById },
     include: houseInclude,
+  });
+}
+
+export async function softDeleteHousesByIds(ids: string[], updatedById?: string | null) {
+  if (!ids.length) return { count: 0 };
+  return prisma.house.updateMany({
+    where: { id: { in: ids }, deletedAt: null },
+    data: { deletedAt: new Date(), updatedById: updatedById ?? null },
   });
 }
 
@@ -336,13 +487,24 @@ export async function getProjectHouseStats(projectId: string) {
     total += count;
   }
 
+  const completed = (byStatus.COMPLETED ?? 0) + (byStatus.DELIVERED ?? 0);
+  const constructionProgressPercent = 0;
+
   return {
     total,
     byStatus,
     houseTypeCount,
-    completed: (byStatus.COMPLETED ?? 0) + (byStatus.DELIVERED ?? 0),
+    completed,
     planning: byStatus.PLANNING ?? 0,
-    constructionProgressPercent: 0,
+    constructionProgressPercent,
+    placeholders: {
+      activities: 0,
+      boq: 0,
+      inspections: byStatus.INSPECTION ?? 0,
+      materials: 0,
+      progress: constructionProgressPercent,
+      budget: null as number | null,
+    },
   };
 }
 
