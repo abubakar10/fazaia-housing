@@ -22,4 +22,5 @@
 - **Module 4 — Organization Hierarchy: COMPLETE**
 - **Module 5 — Project Management: COMPLETE**
 - **Module 6 — Project Structure (Phases, Sectors & Blocks): COMPLETE**
-- Module 7+ — waiting for explicit approval
+- **Module 7 — House Types, Templates & Houses: COMPLETE**
+- Module 8+ — waiting for explicit approval

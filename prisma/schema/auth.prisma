@@ -36,6 +36,7 @@ model User {
   projectMembers ProjectMember[]
   managedProjects Project[]         @relation("ProjectManager")
   projectContext UserProjectContext?
+  savedListFilters SavedListFilter[]
 
   @@index([status, deletedAt])
   @@index([orgUnitId, status])

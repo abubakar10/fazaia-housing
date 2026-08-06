@@ -21,12 +21,14 @@ import { ProjectDashboardView } from "./project-dashboard-view";
 import { ProjectMembersPanel } from "./project-members-panel";
 import { ProjectSettingsForm } from "./project-settings-form";
 import { ProjectStructurePanel } from "@/features/structure/components/project-structure-panel";
+import { ProjectHousesPanel } from "@/features/houses/components/project-houses-panel";
 
 type Props = { projectId: string };
 
 const TABS = [
   { id: "dashboard", label: "Dashboard" },
   { id: "structure", label: "Structure" },
+  { id: "houses", label: "Houses" },
   { id: "members", label: "Members" },
   { id: "settings", label: "Settings" },
 ] as const;
@@ -130,6 +132,17 @@ export function ProjectDetailClient({ projectId }: Props) {
               projectName={project.name}
               readOnly={readOnly}
             />
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {tab === "houses" ? (
+        <Card className="border-border/70 shadow-soft">
+          <CardHeader>
+            <CardTitle className="text-base">Houses</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ProjectHousesPanel projectId={projectId} readOnly={readOnly} />
           </CardContent>
         </Card>
       ) : null}

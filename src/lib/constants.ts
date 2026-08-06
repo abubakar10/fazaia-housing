@@ -41,6 +41,12 @@ export const NAV_ITEMS = [
     permission: "projects.read",
   },
   {
+    title: "House types",
+    href: "/house-types",
+    icon: "Home",
+    permission: "houses.read",
+  },
+  {
     title: "Store",
     href: "/store",
     icon: "Warehouse",

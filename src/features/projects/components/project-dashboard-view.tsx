@@ -120,6 +120,39 @@ export function ProjectDashboardView({
         <ProjectKpiGrid kpis={dashboard.kpis} />
       </section>
 
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Card className="border-border/70 shadow-soft">
+          <CardContent className="pt-4">
+            <p className="text-xs text-muted-foreground">Houses</p>
+            <p className="text-2xl font-semibold">{dashboard.houseStats.total}</p>
+          </CardContent>
+        </Card>
+        <Card className="border-border/70 shadow-soft">
+          <CardContent className="pt-4">
+            <p className="text-xs text-muted-foreground">House types</p>
+            <p className="text-2xl font-semibold">
+              {dashboard.houseStats.houseTypeCount}
+            </p>
+          </CardContent>
+        </Card>
+        <Card className="border-border/70 shadow-soft">
+          <CardContent className="pt-4">
+            <p className="text-xs text-muted-foreground">Planning</p>
+            <p className="text-2xl font-semibold">{dashboard.houseStats.planning}</p>
+          </CardContent>
+        </Card>
+        <Card className="border-border/70 shadow-soft">
+          <CardContent className="pt-4">
+            <p className="text-xs text-muted-foreground">Completed</p>
+            <p className="text-2xl font-semibold">{dashboard.houseStats.completed}</p>
+          </CardContent>
+        </Card>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Construction progress: {dashboard.houseStats.constructionProgressPercent}%
+        (placeholder until execution modules).
+      </p>
+
       <div className="grid gap-4 lg:grid-cols-2">
         <Card className="border-border/70 shadow-soft">
           <CardHeader>

@@ -14,6 +14,7 @@ import {
   listProjectAuditEvents,
 } from "../repositories/project.repository";
 import { countStructureForProject } from "@/features/structure/repositories/structure.repository";
+import { getProjectHouseStats } from "@/features/houses/repositories/house.repository";
 import type { ListProjectActivityQuery } from "../schemas/project.schemas";
 
 async function assertProjectVisible(
@@ -38,12 +39,14 @@ export const projectDashboardService = {
     await requirePermission(PERMISSIONS.PROJECTS_READ);
     await assertProjectVisible(actorId, projectId, resolveVisible);
 
-    const [project, memberPreview, auditRows, structureCounts] = await Promise.all([
-      getProjectById(projectId),
-      getProjectMemberPreview(projectId, 6),
-      listProjectAuditEvents(projectId, activityQuery?.limit ?? 30),
-      countStructureForProject(projectId),
-    ]);
+    const [project, memberPreview, auditRows, structureCounts, houseStats] =
+      await Promise.all([
+        getProjectById(projectId),
+        getProjectMemberPreview(projectId, 6),
+        listProjectAuditEvents(projectId, activityQuery?.limit ?? 30),
+        countStructureForProject(projectId),
+        getProjectHouseStats(projectId),
+      ]);
 
     if (!project) throw new NotFoundError("Project", projectId);
 
@@ -79,10 +82,19 @@ export const projectDashboardService = {
     kpis.phases = structureCounts.phases;
     kpis.sectors = structureCounts.sectors;
     kpis.blocks = structureCounts.blocks;
+    kpis.houses = houseStats.total;
+    kpis.progressPercent = houseStats.constructionProgressPercent;
 
     return {
       summary,
       kpis,
+      houseStats: {
+        total: houseStats.total,
+        houseTypeCount: houseStats.houseTypeCount,
+        completed: houseStats.completed,
+        planning: houseStats.planning,
+        constructionProgressPercent: houseStats.constructionProgressPercent,
+      },
       memberPreview: memberPreview.map(toProjectMemberDto),
       memberCount: summary.memberCount,
       deadlines,

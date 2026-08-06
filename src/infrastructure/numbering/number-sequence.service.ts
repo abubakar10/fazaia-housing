@@ -174,3 +174,33 @@ export async function allocateBlockCode(sectorId: string) {
     padLength: 2,
   });
 }
+
+export async function allocateHouseCode(blockId: string) {
+  return allocateScopedDisplayCode({
+    scopeType: "BLOCK",
+    scopeId: blockId,
+    documentType: "HOUSE",
+    prefix: "HSE",
+    padLength: 3,
+  });
+}
+
+export async function allocateHouseTypeCode(scopeId: string) {
+  return allocateScopedDisplayCode({
+    scopeType: "HOUSE_TYPE_SCOPE",
+    scopeId,
+    documentType: "HOUSE_TYPE",
+    prefix: "HT",
+    padLength: 3,
+  });
+}
+
+export async function allocateHouseTemplateCode(houseTypeId: string) {
+  return allocateScopedDisplayCode({
+    scopeType: "HOUSE_TYPE",
+    scopeId: houseTypeId,
+    documentType: "HOUSE_TEMPLATE",
+    prefix: "TPL",
+    padLength: 2,
+  });
+}

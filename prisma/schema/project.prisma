@@ -66,6 +66,10 @@ model Project {
   phases           Phase[]
   sectors          Sector[]
   blocks           Block[]
+  houseTypes       HouseType[]
+  houseTemplates   HouseTemplate[]
+  houses           House[]
+  savedListFilters SavedListFilter[]
 
   @@index([status, deletedAt])
   @@index([orgUnitId, deletedAt])
@@ -144,6 +148,7 @@ model Phase {
 
   project Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   sectors Sector[]
+  houses  House[]
 
   @@unique([projectId, code])
   @@index([projectId, deletedAt])
@@ -174,6 +179,7 @@ model Sector {
   phase   Phase   @relation(fields: [phaseId], references: [id], onDelete: Cascade)
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   blocks  Block[]
+  houses  House[]
 
   @@unique([phaseId, code])
   @@index([projectId, deletedAt])
@@ -204,6 +210,7 @@ model Block {
 
   sector  Sector  @relation(fields: [sectorId], references: [id], onDelete: Cascade)
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  houses  House[]
 
   @@unique([sectorId, code])
   @@index([projectId, deletedAt])

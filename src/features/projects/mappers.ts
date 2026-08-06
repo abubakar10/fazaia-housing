@@ -94,6 +94,13 @@ export type ProjectActivityEvent = {
 export type ProjectDashboardDto = {
   summary: ProjectDto;
   kpis: ProjectKpiSnapshot;
+  houseStats: {
+    total: number;
+    houseTypeCount: number;
+    completed: number;
+    planning: number;
+    constructionProgressPercent: number;
+  };
   memberPreview: ProjectMemberDto[];
   memberCount: number;
   deadlines: Array<{
