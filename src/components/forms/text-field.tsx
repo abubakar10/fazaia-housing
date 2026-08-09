@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { Eye, EyeOff } from "lucide-react";
 import {
   Controller,
   type Control,
@@ -10,6 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 type FieldShellProps = {
@@ -60,6 +62,8 @@ type TextFieldProps<T extends FieldValues> = {
   hint?: string;
   disabled?: boolean;
   className?: string;
+  /** Show eye toggle for password fields (default true when type is password). */
+  revealPassword?: boolean;
 };
 
 export function TextField<T extends FieldValues>({
@@ -72,8 +76,12 @@ export function TextField<T extends FieldValues>({
   hint,
   disabled,
   className,
+  revealPassword,
 }: TextFieldProps<T>) {
   const id = String(name);
+  const isPassword = type === "password";
+  const canReveal = isPassword && (revealPassword ?? true);
+  const [visible, setVisible] = React.useState(false);
 
   return (
     <Controller
@@ -88,16 +96,37 @@ export function TextField<T extends FieldValues>({
           error={fieldState.error?.message}
           className={className}
         >
-          <Input
-            {...field}
-            id={id}
-            type={type}
-            placeholder={placeholder}
-            disabled={disabled}
-            aria-invalid={!!fieldState.error}
-            className="min-h-11"
-            value={field.value ?? ""}
-          />
+          <div className="relative">
+            <Input
+              {...field}
+              id={id}
+              type={canReveal ? (visible ? "text" : "password") : type}
+              placeholder={placeholder}
+              disabled={disabled}
+              aria-invalid={!!fieldState.error}
+              className={cn("min-h-11", canReveal && "pr-11")}
+              value={field.value ?? ""}
+              autoComplete={isPassword ? "current-password" : undefined}
+            />
+            {canReveal ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                disabled={disabled}
+                className="absolute top-1/2 right-1 size-9 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                onClick={() => setVisible((v) => !v)}
+                aria-label={visible ? "Hide password" : "Show password"}
+                aria-pressed={visible}
+              >
+                {visible ? (
+                  <EyeOff className="size-4" />
+                ) : (
+                  <Eye className="size-4" />
+                )}
+              </Button>
+            ) : null}
+          </div>
         </FieldShell>
       )}
     />
@@ -106,7 +135,7 @@ export function TextField<T extends FieldValues>({
 
 type TextareaFieldProps<T extends FieldValues> = Omit<
   TextFieldProps<T>,
-  "type"
+  "type" | "revealPassword"
 > & {
   rows?: number;
 };
