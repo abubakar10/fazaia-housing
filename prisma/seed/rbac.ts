@@ -73,7 +73,7 @@ async function seedRoles() {
 
 async function assignBootstrapAdmin() {
   const email = (
-    process.env.BOOTSTRAP_ADMIN_EMAIL ?? "admin@fazia.local"
+    process.env.BOOTSTRAP_ADMIN_EMAIL ?? "admin@falcon.local"
   ).toLowerCase();
 
   const user = await prisma.user.findUnique({ where: { email } });

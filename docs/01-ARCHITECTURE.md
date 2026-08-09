@@ -1,4 +1,4 @@
-# FAZIA Housing — Construction Management ERP
+# Falcon Housing — Construction Management ERP
 ## Software Architecture Document (v1.0)
 
 > **Status:** AWAITING APPROVAL — No application code until this architecture is approved.  
@@ -165,7 +165,7 @@ Optional later: Upstash Redis for rate limiting & realtime pub/sub; Vercel Cron 
 ## 3. Folder Structure
 
 ```
-fazia-housing/
+falcon-housing/
 ├── apps/                          # reserved if we later split; v1 uses root Next app
 ├── prisma/
 │   ├── schema/

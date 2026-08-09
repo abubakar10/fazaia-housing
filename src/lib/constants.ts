@@ -1,4 +1,5 @@
-export const APP_NAME = "FAZIA Housing";
+export const APP_NAME =
+  process.env.NEXT_PUBLIC_APP_NAME?.trim() || "Falcon Housing";
 export const APP_DESCRIPTION =
   "Enterprise construction management ERP for residential housing programs.";
 

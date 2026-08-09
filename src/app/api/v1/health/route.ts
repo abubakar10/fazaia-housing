@@ -27,7 +27,7 @@ export async function GET() {
     const status = database === "down" ? "degraded" : "ok";
     const payload = {
       status,
-      service: "fazia-housing",
+      service: "falcon-housing",
       module: "foundation",
       version: "0.1.0",
       timestamp: new Date().toISOString(),

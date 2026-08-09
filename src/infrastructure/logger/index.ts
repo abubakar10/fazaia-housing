@@ -7,7 +7,7 @@ function emit(level: LogLevel, message: string, fields?: LogFields) {
     level,
     message,
     time: new Date().toISOString(),
-    service: "fazia-housing",
+    service: "falcon-housing",
     ...fields,
   };
 

@@ -35,7 +35,7 @@ function getAuthSecret() {
     if (process.env.NODE_ENV === "production") {
       throw new Error("AUTH_SECRET is required in production");
     }
-    return "fazia-dev-auth-secret-change-me";
+    return "falcon-dev-auth-secret-change-me";
   }
   return secret;
 }

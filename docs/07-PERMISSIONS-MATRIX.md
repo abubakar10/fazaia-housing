@@ -1,4 +1,4 @@
-# FAZIA Housing — Permissions Matrix (v1.0 Draft)
+# Falcon Housing — Permissions Matrix (v1.0 Draft)
 
 Permission codes are seeded and fully configurable via Role → Permission mapping.
 

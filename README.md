@@ -1,4 +1,4 @@
-# FAZIA Housing ERP
+# Falcon Housing ERP
 
 Enterprise Construction Management ERP for residential housing programs.
 
@@ -48,7 +48,7 @@ pnpm dev
 
 Default bootstrap credentials (override via `.env`):
 
-- Email: `admin@fazia.local`
+- Email: `admin@falcon.local`
 - Password: `ChangeMe123!`
 
 Open [http://localhost:3000](http://localhost:3000) (redirects to login when signed out).

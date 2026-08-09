@@ -11,7 +11,7 @@ type SeedUnit = {
 };
 
 const UNITS: SeedUnit[] = [
-  { code: "HQ", name: "FAZIA Headquarters", type: "HQ", sortOrder: 0 },
+  { code: "HQ", name: "Falcon Headquarters", type: "HQ", sortOrder: 0 },
   { code: "REG-NORTH", name: "Northern Region", type: "REGION", parentCode: "HQ", sortOrder: 1 },
   { code: "REG-SOUTH", name: "Southern Region", type: "REGION", parentCode: "HQ", sortOrder: 2 },
   {
@@ -76,7 +76,7 @@ async function main() {
   }
 
   const adminEmail = (
-    process.env.BOOTSTRAP_ADMIN_EMAIL ?? "admin@fazia.local"
+    process.env.BOOTSTRAP_ADMIN_EMAIL ?? "admin@falcon.local"
   ).toLowerCase();
   const hqId = byCode.get("HQ");
   if (hqId) {

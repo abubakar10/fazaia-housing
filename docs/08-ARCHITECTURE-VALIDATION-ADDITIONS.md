@@ -1,4 +1,4 @@
-# FAZIA Housing — Final Architecture Validation & Additions (v1.0)
+# Falcon Housing — Final Architecture Validation & Additions (v1.0)
 
 > **Review type:** Principal Software Architect pre-development validation  
 > **Constraint:** Existing architecture is **frozen**. This document only **appends** missing enterprise requirements.  

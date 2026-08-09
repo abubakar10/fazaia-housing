@@ -1,4 +1,4 @@
-# FAZIA Housing — Prisma Models Design (v1.0)
+# Falcon Housing — Prisma Models Design (v1.0)
 
 > Design-only. Multi-file Prisma schema under `prisma/schema/`.  
 > Implementation happens after approval.

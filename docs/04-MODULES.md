@@ -1,4 +1,4 @@
-# FAZIA Housing — Module Specifications (v1.0)
+# Falcon Housing — Module Specifications (v1.0)
 
 Each module follows the build order: **UX → Schema → API → Backend → Frontend → Integrate → Validate → Test → Refactor**.
 

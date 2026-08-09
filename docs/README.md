@@ -1,4 +1,4 @@
-# FAZIA Housing ERP — Architecture Package
+# Falcon Housing ERP — Architecture Package
 
 > **FROZEN** — Approved. No architecture changes unless explicitly requested.
 

@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 
 async function main() {
   const email = (
-    process.env.BOOTSTRAP_ADMIN_EMAIL ?? "admin@fazia.local"
+    process.env.BOOTSTRAP_ADMIN_EMAIL ?? "admin@falcon.local"
   ).toLowerCase();
   const password = process.env.BOOTSTRAP_ADMIN_PASSWORD ?? "ChangeMe123!";
   const name = process.env.BOOTSTRAP_ADMIN_NAME ?? "System Admin";

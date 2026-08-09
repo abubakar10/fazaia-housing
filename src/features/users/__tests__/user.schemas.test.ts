@@ -33,7 +33,7 @@ describe("user schemas", () => {
   it("accepts create user with optional password", () => {
     const parsed = createUserSchema.parse({
       name: "New User",
-      email: "new@fazia.local",
+      email: "new@falcon.local",
     });
     expect(parsed.status).toBe("ACTIVE");
     expect(parsed.password).toBeUndefined();

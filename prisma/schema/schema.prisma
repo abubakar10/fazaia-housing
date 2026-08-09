@@ -1,4 +1,4 @@
-// FAZIA Housing — Prisma root
+// Falcon Housing — Prisma root
 // Multi-file schema. Architecture frozen — Module 0 baselines only.
 
 generator client {

@@ -9,14 +9,14 @@ async function main() {
       name: "Ali Resident",
       designation: "Resident Engineer",
       department: "Site",
-      email: "ali.re@fazia.local",
+      email: "ali.re@falcon.local",
     },
     {
       code: "EMP-002",
       name: "Sara Quality",
       designation: "Quality Manager",
       department: "QA",
-      email: "sara.qm@fazia.local",
+      email: "sara.qm@falcon.local",
     },
   ];
 

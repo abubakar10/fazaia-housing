@@ -1,4 +1,4 @@
-# FAZIA Housing — Database ERD & Data Architecture (v1.0)
+# Falcon Housing — Database ERD & Data Architecture (v1.0)
 
 > Soft delete, UUIDs, timestamps, and actor stamps apply to all mutable business tables unless noted.
 
