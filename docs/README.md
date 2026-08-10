@@ -13,6 +13,7 @@
 | [07-PERMISSIONS-MATRIX.md](./07-PERMISSIONS-MATRIX.md) | RBAC catalog & default roles |
 | [08-ARCHITECTURE-VALIDATION-ADDITIONS.md](./08-ARCHITECTURE-VALIDATION-ADDITIONS.md) | Final validation: additive gaps only + scores |
 | [09-DOCUMENT-MAPPING.md](./09-DOCUMENT-MAPPING.md) | Client document → ERP module / tables / workflow / API / reports / KPIs |
+| [CLIENT-MVP-MANUAL.md](./CLIENT-MVP-MANUAL.md) | **Client demo guide** — Modules 0–7, how to use the MVP |
 
 > **Architecture refinement (pre–Module 8):** Yard Stick (11A), RAR (24A), Payment Voucher (24B), Contract Payment Engine, Progress Sheets, construction reports, workflow/dashboard/API reservations — **docs only**. No application code.
 
