@@ -1,5 +1,5 @@
-import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { FalconLoader } from "@/components/brand";
 
 type PageSkeletonProps = {
   rows?: number;
@@ -8,33 +8,20 @@ type PageSkeletonProps = {
 
 export function PageSkeleton({ rows = 6, className }: PageSkeletonProps) {
   return (
-    <div className={cn("space-y-6", className)} aria-busy="true" aria-live="polite">
+    <div className={cn("space-y-4", className)} aria-busy="true" aria-live="polite">
+      <FalconLoader label="Loading data…" />
       <div className="space-y-3">
-        <Skeleton className="h-8 w-56" />
-        <Skeleton className="h-4 w-96 max-w-full" />
-      </div>
-      <div className="flex flex-wrap gap-2">
-        <Skeleton className="h-10 w-48" />
-        <Skeleton className="h-10 w-28" />
-        <Skeleton className="h-10 w-28" />
+        <div className="h-8 w-56 overflow-hidden rounded-md bg-[linear-gradient(90deg,#e4f3fa_0%,#c8ebf8_50%,#e4f3fa_100%)] bg-[length:200%_100%] animate-shimmer" />
+        <div className="h-4 w-96 max-w-full overflow-hidden rounded-md bg-[linear-gradient(90deg,#e4f3fa_0%,#c8ebf8_50%,#e4f3fa_100%)] bg-[length:200%_100%] animate-shimmer" />
       </div>
       <div className="overflow-hidden rounded-2xl border border-border/70">
-        <div className="border-b border-border/70 bg-muted/30 px-4 py-3">
-          <Skeleton className="h-4 w-40" />
-        </div>
-        <div className="divide-y divide-border/60">
-          {Array.from({ length: rows }).map((_, index) => (
-            <div
-              key={index}
-              className="grid grid-cols-1 gap-3 px-4 py-4 sm:grid-cols-4"
-            >
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="hidden h-4 w-full sm:block" />
-              <Skeleton className="hidden h-4 w-full sm:block" />
-              <Skeleton className="h-4 w-24" />
-            </div>
-          ))}
-        </div>
+        {Array.from({ length: rows }).map((_, index) => (
+          <div
+            key={index}
+            className="h-12 border-b border-border/50 bg-[linear-gradient(90deg,#e4f3fa_0%,#d7eef8_50%,#e4f3fa_100%)] bg-[length:200%_100%] animate-shimmer last:border-0"
+            style={{ animationDelay: `${index * 80}ms` }}
+          />
+        ))}
       </div>
     </div>
   );

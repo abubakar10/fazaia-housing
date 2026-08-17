@@ -4,12 +4,14 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import { toast } from "sonner";
 import {
   forgotPasswordSchema,
   type ForgotPasswordInput,
 } from "@/features/auth/schemas/auth.schemas";
 import { TextField } from "@/components/forms";
+import { BrandLogo, FalconLoader } from "@/components/brand";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -23,6 +25,7 @@ import {
 export function ForgotPasswordForm() {
   const [isPending, setIsPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const reduceMotion = useReducedMotion();
 
   const form = useForm<ForgotPasswordInput>({
     resolver: zodResolver(forgotPasswordSchema),
@@ -52,8 +55,14 @@ export function ForgotPasswordForm() {
   }
 
   return (
-    <Card className="border-border/70 bg-card/80 shadow-soft backdrop-blur-xl">
-      <CardHeader className="space-y-2">
+    <motion.div
+      initial={reduceMotion ? false : { opacity: 0, y: 18 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+    >
+    <Card className="border-white/10 bg-card/95 shadow-glow backdrop-blur-xl">
+      <CardHeader className="space-y-4">
+        <BrandLogo size="md" floating priority />
         <CardTitle className="font-display text-2xl tracking-tight">
           Forgot password
         </CardTitle>
@@ -63,7 +72,8 @@ export function ForgotPasswordForm() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)} noValidate>
+        {isPending ? <FalconLoader compact label="Sending reset link…" /> : null}
+        <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)} noValidate hidden={isPending}>
           <TextField
             control={form.control}
             name="email"
@@ -89,5 +99,6 @@ export function ForgotPasswordForm() {
         </Link>
       </CardFooter>
     </Card>
+    </motion.div>
   );
 }

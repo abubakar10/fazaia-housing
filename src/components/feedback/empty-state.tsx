@@ -26,8 +26,8 @@ export function EmptyState({
         className,
       )}
     >
-      <div className="mb-4 flex size-12 items-center justify-center rounded-2xl bg-muted/80 text-muted-foreground">
-        <Icon className="size-5" aria-hidden />
+      <div className="mb-4 flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-[0_0_20px_rgba(0,174,239,0.18)]">
+        <Icon className="size-5 animate-falcon-breathe" aria-hidden />
       </div>
       <h3 className="font-display text-lg font-semibold tracking-tight">
         {title}

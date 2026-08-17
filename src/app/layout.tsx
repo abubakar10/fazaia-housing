@@ -23,6 +23,10 @@ export const metadata: Metadata = {
     template: `%s · ${APP_NAME}`,
   },
   description: APP_DESCRIPTION,
+  icons: {
+    icon: "/brand/falcon-logo.png",
+    apple: "/brand/falcon-logo.png",
+  },
 };
 
 export default async function RootLayout({

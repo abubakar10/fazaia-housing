@@ -14,15 +14,19 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Can } from "@/features/rbac/components/can";
-import { formatDate } from "@/lib/utils";
+import { BrandLogo } from "@/components/brand";
+import { formatDate, formatMoney, formatPercent } from "@/lib/utils";
 import type { ProjectDashboardDto } from "../mappers";
 import {
   PROJECT_PRIORITY_LABELS,
   PROJECT_STATUS_LABELS,
   PROJECT_TYPE_LABELS,
 } from "../mappers";
+import { buildProjectReport } from "../lib/dashboard-report";
 import { ActivityTimeline } from "./activity-timeline";
 import { ProjectKpiGrid } from "./project-kpi-grid";
+import { ReportGauge } from "./report-gauge";
+import { ReportLineChart } from "./report-line-chart";
 
 type Props = {
   dashboard: ProjectDashboardDto;
@@ -36,10 +40,124 @@ export function ProjectDashboardView({
   readOnly,
 }: Props) {
   const { summary } = dashboard;
+  const report = buildProjectReport(dashboard);
+  const currency = summary.currencyCode || "PKR";
 
   return (
     <div className="space-y-6">
-      <Card className="border-border/70 shadow-soft">
+      <section className="overflow-hidden rounded-3xl border border-border/70 bg-white shadow-soft">
+        <div className="flex flex-col gap-4 border-b border-border/60 bg-primary px-5 py-4 text-white sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <div className="flex items-center gap-3">
+            <BrandLogo size="sm" animated={false} className="ring-white/40" />
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/80">
+                Project dashboard
+              </p>
+              <h2 className="font-display text-xl font-semibold tracking-tight text-white">
+                {summary.name}
+                {summary.location ? ` · ${summary.location}` : ""}
+              </h2>
+            </div>
+          </div>
+          <div className="text-sm sm:text-right">
+            <p className="text-white/80">Report date</p>
+            <p className="font-semibold text-white">{formatDate(report.reportDate)}</p>
+          </div>
+        </div>
+
+        <div className="grid gap-4 p-5 sm:grid-cols-3 sm:p-6">
+          <DateTile label="Project start" value={formatDate(report.startDate)} />
+          <DateTile label="Contract finish" value={formatDate(report.contractFinish)} />
+          <DateTile label="Forecast finish" value={formatDate(report.forecastFinish)} />
+        </div>
+      </section>
+
+      {report.previewBudget ? (
+        <p className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-muted-foreground">
+          Cost, cash, manpower, and equipment charts are a customer preview until
+          billing, DPR, and budget modules are live. House counts and construction
+          progress are live.
+        </p>
+      ) : null}
+
+      <section className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+        <Card className="border-border/70 bg-white shadow-soft">
+          <CardHeader>
+            <CardTitle className="text-base">Schedule performance</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-3 sm:grid-cols-3">
+            <Metric
+              label="Planned value"
+              value={formatMoney(report.plannedValue, currency)}
+              hint={formatPercent(report.plannedPct)}
+            />
+            <Metric
+              label="Earned value"
+              value={formatMoney(report.earnedValue, currency)}
+              hint={formatPercent(report.earnedPct)}
+            />
+            <Metric
+              label="Variance"
+              value={formatMoney(report.variance, currency)}
+              hint={report.variance > 0 ? "Behind plan" : "On / ahead"}
+            />
+          </CardContent>
+        </Card>
+        <Card className="border-border/70 bg-white shadow-soft">
+          <CardContent className="grid grid-cols-2 gap-2 pt-6">
+            <ReportGauge label="SPI" value={report.spi} />
+            <ReportGauge label="CPI" value={report.cpi} />
+          </CardContent>
+        </Card>
+      </section>
+
+      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <MetricCard label="BAC" value={formatMoney(report.bac, currency)} hint="Budget at completion" />
+        <MetricCard label="EAC" value={formatMoney(report.eac, currency)} hint="Estimate at completion" />
+        <MetricCard label="ETG" value={formatMoney(report.etg, currency)} hint="Estimate to go" />
+        <MetricCard
+          label="Cost variance"
+          value={formatMoney(report.costVariance, currency)}
+          hint="Earned − actual"
+        />
+      </section>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <ReportLineChart
+          title="Progress — plan vs actual"
+          labels={report.months}
+          series={[
+            { label: "Plan", color: "#00aeef", values: report.progress.map((p) => p.plan) },
+            { label: "Actual", color: "#38bdf8", values: report.progress.map((p) => p.actual) },
+          ]}
+        />
+        <ReportLineChart
+          title="Cash-in vs cash-out"
+          labels={report.months}
+          series={[
+            { label: "Cash-in", color: "#00aeef", values: report.cashIn.map((p) => p.actual) },
+            { label: "Cash-out", color: "#7dd3fc", values: report.cashOut.map((p) => p.actual) },
+          ]}
+        />
+        <ReportLineChart
+          title="Manpower"
+          labels={report.months}
+          series={[
+            { label: "Plan", color: "#00aeef", values: report.manpower.map((p) => p.plan) },
+            { label: "Actual", color: "#38bdf8", values: report.manpower.map((p) => p.actual) },
+          ]}
+        />
+        <ReportLineChart
+          title="Equipment"
+          labels={report.months}
+          series={[
+            { label: "Plan", color: "#00aeef", values: report.equipment.map((p) => p.plan) },
+            { label: "Actual", color: "#38bdf8", values: report.equipment.map((p) => p.actual) },
+          ]}
+        />
+      </div>
+
+      <Card className="border-border/70 bg-white shadow-soft">
         <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <CardTitle className="text-base">Project summary</CardTitle>
@@ -116,76 +234,23 @@ export function ProjectDashboardView({
       </div>
 
       <section>
-        <h3 className="mb-3 text-sm font-semibold">KPI snapshot</h3>
+        <h3 className="mb-3 text-sm font-semibold">Live project counts</h3>
         <ProjectKpiGrid kpis={dashboard.kpis} />
       </section>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-5">
-        <Card className="border-border/70 shadow-soft">
-          <CardContent className="pt-4">
-            <p className="text-xs text-muted-foreground">Houses</p>
-            <p className="text-2xl font-semibold">{dashboard.houseStats.total}</p>
-          </CardContent>
-        </Card>
-        <Card className="border-border/70 shadow-soft">
-          <CardContent className="pt-4">
-            <p className="text-xs text-muted-foreground">House types</p>
-            <p className="text-2xl font-semibold">
-              {dashboard.houseStats.houseTypeCount}
-            </p>
-          </CardContent>
-        </Card>
-        <Card className="border-border/70 shadow-soft">
-          <CardContent className="pt-4">
-            <p className="text-xs text-muted-foreground">Planning</p>
-            <p className="text-2xl font-semibold">{dashboard.houseStats.planning}</p>
-          </CardContent>
-        </Card>
-        <Card className="border-border/70 shadow-soft">
-          <CardContent className="pt-4">
-            <p className="text-xs text-muted-foreground">Completed</p>
-            <p className="text-2xl font-semibold">{dashboard.houseStats.completed}</p>
-          </CardContent>
-        </Card>
-        <Card className="border-border/70 shadow-soft">
-          <CardContent className="pt-4">
-            <p className="text-xs text-muted-foreground">Inspections</p>
-            <p className="text-2xl font-semibold">
-              {dashboard.houseStats.placeholders.inspections}
-            </p>
-            <p className="text-[10px] text-muted-foreground">status count</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        {(
-          [
-            ["Activities", dashboard.houseStats.placeholders.activities],
-            ["BOQ", dashboard.houseStats.placeholders.boq],
-            ["Materials", dashboard.houseStats.placeholders.materials],
-            ["Progress %", dashboard.houseStats.placeholders.progress],
-            [
-              "Budget",
-              dashboard.houseStats.placeholders.budget == null
-                ? "—"
-                : dashboard.houseStats.placeholders.budget,
-            ],
-            ["Constr. progress", `${dashboard.houseStats.constructionProgressPercent}%`],
-          ] as const
-        ).map(([label, value]) => (
-          <Card key={label} className="border-border/70 border-dashed shadow-soft">
-            <CardContent className="pt-4">
-              <p className="text-xs text-muted-foreground">{label}</p>
-              <p className="text-xl font-semibold">{value}</p>
-              <p className="text-[10px] text-muted-foreground">placeholder</p>
-            </CardContent>
-          </Card>
-        ))}
+        <StatCard label="Houses" value={dashboard.houseStats.total} />
+        <StatCard label="House types" value={dashboard.houseStats.houseTypeCount} />
+        <StatCard label="Planning" value={dashboard.houseStats.planning} />
+        <StatCard label="Completed" value={dashboard.houseStats.completed} />
+        <StatCard
+          label="Constr. progress"
+          value={`${dashboard.houseStats.constructionProgressPercent}%`}
+        />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card className="border-border/70 shadow-soft">
+        <Card className="border-border/70 bg-white shadow-soft">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <Calendar className="size-4 text-primary" />
@@ -208,7 +273,7 @@ export function ProjectDashboardView({
           </CardContent>
         </Card>
 
-        <Card className="border-border/70 shadow-soft">
+        <Card className="border-border/70 bg-white shadow-soft">
           <CardHeader>
             <CardTitle className="text-base">Assigned members</CardTitle>
           </CardHeader>
@@ -232,10 +297,10 @@ export function ProjectDashboardView({
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card className="border-border/70 border-dashed">
+        <Card className="border-border/70 border-dashed bg-white">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-sm">
-              <ListTodo className="size-4" />
+              <ListTodo className="size-4 text-primary" />
               Pending workflow tasks
             </CardTitle>
           </CardHeader>
@@ -243,10 +308,10 @@ export function ProjectDashboardView({
             Module 22 workflow tasks will appear here.
           </CardContent>
         </Card>
-        <Card className="border-border/70 border-dashed">
+        <Card className="border-border/70 border-dashed bg-white">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-sm">
-              <FileText className="size-4" />
+              <FileText className="size-4 text-primary" />
               Recent documents
             </CardTitle>
           </CardHeader>
@@ -254,10 +319,10 @@ export function ProjectDashboardView({
             Module 29 document vault will appear here.
           </CardContent>
         </Card>
-        <Card className="border-border/70 border-dashed">
+        <Card className="border-border/70 border-dashed bg-white">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-sm">
-              <Bell className="size-4" />
+              <Bell className="size-4 text-primary" />
               Notifications
             </CardTitle>
           </CardHeader>
@@ -267,7 +332,7 @@ export function ProjectDashboardView({
         </Card>
       </div>
 
-      <Card className="border-border/70 shadow-soft">
+      <Card className="border-border/70 bg-white shadow-soft">
         <CardHeader>
           <CardTitle className="text-base">Recent activity</CardTitle>
         </CardHeader>
@@ -276,5 +341,67 @@ export function ProjectDashboardView({
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function DateTile({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl bg-primary/10 px-4 py-3">
+      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        {label}
+      </p>
+      <p className="mt-1 text-lg font-semibold">{value}</p>
+    </div>
+  );
+}
+
+function Metric({
+  label,
+  value,
+  hint,
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-border/60 bg-canvas/60 p-4">
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="mt-1 text-lg font-semibold tracking-tight">{value}</p>
+      {hint ? <p className="text-xs text-primary">{hint}</p> : null}
+    </div>
+  );
+}
+
+function MetricCard({
+  label,
+  value,
+  hint,
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+}) {
+  return (
+    <Card className="border-border/70 bg-white shadow-soft">
+      <CardContent className="pt-4">
+        <p className="text-xs font-medium uppercase tracking-wide text-primary">
+          {label}
+        </p>
+        <p className="mt-1 text-xl font-semibold">{value}</p>
+        {hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
+      </CardContent>
+    </Card>
+  );
+}
+
+function StatCard({ label, value }: { label: string; value: string | number }) {
+  return (
+    <Card className="border-border/70 bg-white shadow-soft">
+      <CardContent className="pt-4">
+        <p className="text-xs text-muted-foreground">{label}</p>
+        <p className="text-2xl font-semibold">{value}</p>
+      </CardContent>
+    </Card>
   );
 }

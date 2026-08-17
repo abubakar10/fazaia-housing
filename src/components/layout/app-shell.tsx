@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { motion, useReducedMotion } from "framer-motion";
 import {
   Bell,
   Building2,
@@ -44,6 +45,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth, useLogout } from "@/features/auth/hooks/use-auth";
 import { ProjectContextSwitcher } from "@/features/projects/components/project-context-switcher";
 import { usePermissions } from "@/features/rbac/components/can";
+import { BrandLogo } from "@/components/brand";
 
 const ICONS = {
   LayoutDashboard,
@@ -62,10 +64,11 @@ const ICONS = {
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const { can, isSuperAdmin, isLoading, permissionsReady } = usePermissions();
+  const reduceMotion = useReducedMotion();
 
   return (
     <nav className="flex flex-col gap-1 p-3" aria-label="Primary">
-      {NAV_ITEMS.map((item) => {
+      {NAV_ITEMS.map((item, index) => {
         const Icon = ICONS[item.icon];
         const active =
           pathname === item.href ||
@@ -79,7 +82,6 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
           !item.permission ||
           can(item.permission);
 
-        // Keep layout stable: skeleton only items that need permission codes.
         if (isLoading && needsPermission && !permissionsReady) {
           return (
             <div
@@ -95,7 +97,7 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
           return (
             <div
               key={item.href}
-              className="flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm text-muted-foreground/70"
+              className="flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm text-sidebar-foreground/45"
               aria-disabled
             >
               <Icon className="size-4 shrink-0" />
@@ -108,21 +110,27 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
         }
 
         return (
-          <Link
+          <motion.div
             key={item.href}
-            href={item.href}
-            onClick={onNavigate}
-            className={cn(
-              "flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium transition-colors",
-              active
-                ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                : "text-sidebar-foreground/80 hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground",
-            )}
-            prefetch
+            initial={reduceMotion ? false : { opacity: 0, x: -8 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.03 * index, duration: 0.28 }}
           >
-            <Icon className="size-4 shrink-0" />
-            {item.title}
-          </Link>
+            <Link
+              href={item.href}
+              onClick={onNavigate}
+              className={cn(
+                "flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium transition-all duration-200",
+                active
+                  ? "bg-primary/15 text-primary shadow-[inset_0_0_0_1px_rgba(0,174,239,0.35)]"
+                  : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+              )}
+              prefetch
+            >
+              <Icon className="size-4 shrink-0" />
+              {item.title}
+            </Link>
+          </motion.div>
         );
       })}
     </nav>
@@ -132,16 +140,12 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
 function BrandMark() {
   return (
     <div className="flex items-center gap-3 px-4 py-5">
-      <div className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-soft">
-        <span className="font-display text-sm font-semibold tracking-tight">
-          FH
-        </span>
-      </div>
+      <BrandLogo size="sm" />
       <div className="min-w-0">
-        <p className="truncate font-display text-sm font-semibold tracking-tight">
+        <p className="truncate font-display text-sm font-semibold tracking-tight text-white">
           {APP_NAME}
         </p>
-        <p className="truncate text-xs text-muted-foreground">Construction ERP</p>
+        <p className="truncate text-xs text-primary/80">Construction ERP</p>
       </div>
     </div>
   );
@@ -149,16 +153,14 @@ function BrandMark() {
 
 export function AppSidebar() {
   return (
-    <aside className="hidden w-64 shrink-0 border-r border-sidebar-border bg-sidebar/80 backdrop-blur-xl lg:flex lg:flex-col">
+    <aside className="hidden w-64 shrink-0 border-r border-sidebar-border bg-sidebar lg:flex lg:flex-col">
       <BrandMark />
-      <Separator />
+      <Separator className="bg-sidebar-border" />
       <div className="flex-1 overflow-y-auto">
         <NavLinks />
       </div>
       <div className="border-t border-sidebar-border p-4">
-        <p className="text-xs text-muted-foreground">
-          Module 0 · Foundation shell
-        </p>
+        <p className="text-xs text-sidebar-foreground/50">Falcon Housing · MVP</p>
       </div>
     </aside>
   );
@@ -173,12 +175,12 @@ export function MobileSidebar() {
           <span className="sr-only">Open navigation</span>
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="w-[18rem] p-0">
+      <SheetContent side="left" className="w-[18rem] bg-sidebar p-0 text-sidebar-foreground">
         <SheetHeader className="sr-only">
           <SheetTitle>Navigation</SheetTitle>
         </SheetHeader>
         <BrandMark />
-        <Separator />
+        <Separator className="bg-sidebar-border" />
         <NavLinks />
       </SheetContent>
     </Sheet>
@@ -235,8 +237,8 @@ export function AppTopbar() {
               variant="ghost"
               className="min-h-11 shrink-0 gap-2 rounded-full px-1.5 sm:px-2"
             >
-              <Avatar className="size-9 border border-border">
-                <AvatarFallback className="bg-muted text-xs font-medium">
+              <Avatar className="size-9 border border-primary/30">
+                <AvatarFallback className="bg-primary/15 text-xs font-medium text-navy">
                   {initials}
                 </AvatarFallback>
               </Avatar>

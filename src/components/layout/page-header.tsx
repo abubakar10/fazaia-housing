@@ -24,6 +24,7 @@ export function PageHeader({
         <h1 className="font-display text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
           {title}
         </h1>
+        <div className="h-1 w-16 rounded-full bg-primary/80 shadow-glow" />
         {description ? (
           <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-[15px]">
             {description}

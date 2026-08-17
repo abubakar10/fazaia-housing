@@ -18,8 +18,8 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/feedback/empty-state";
+import { FalconLoader } from "@/components/brand";
 import { cn } from "@/lib/utils";
 
 type DataTableProps<TData> = {
@@ -99,6 +99,10 @@ export function DataTable<TData>({
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-border/70 bg-card/60">
+        {isLoading ? (
+          <FalconLoader compact label="Loading records…" />
+        ) : (
+          <>
         <div className="hidden md:block">
           <Table>
             <TableHeader>
@@ -118,18 +122,6 @@ export function DataTable<TData>({
               ))}
             </TableHeader>
             <TableBody>
-              {isLoading
-                ? Array.from({ length: 5 }).map((_, rowIndex) => (
-                    <TableRow key={`skel-${rowIndex}`}>
-                      {columns.map((_, colIndex) => (
-                        <TableCell key={`skel-${rowIndex}-${colIndex}`}>
-                          <Skeleton className="h-4 w-full" />
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))
-                : null}
-
               {!isLoading && table.getRowModel().rows.length
                 ? table.getRowModel().rows.map((row) => (
                     <TableRow key={row.id}>
@@ -162,16 +154,6 @@ export function DataTable<TData>({
 
         {/* Mobile card list */}
         <div className="divide-y divide-border/60 md:hidden">
-          {isLoading
-            ? Array.from({ length: 4 }).map((_, index) => (
-                <div key={index} className="space-y-2 p-4">
-                  <Skeleton className="h-4 w-2/3" />
-                  <Skeleton className="h-4 w-1/2" />
-                  <Skeleton className="h-4 w-1/3" />
-                </div>
-              ))
-            : null}
-
           {!isLoading && table.getRowModel().rows.length
             ? table.getRowModel().rows.map((row) => (
                 <div key={row.id} className="space-y-2 p-4">
@@ -205,6 +187,8 @@ export function DataTable<TData>({
             />
           ) : null}
         </div>
+          </>
+        )}
       </div>
 
       {onPageChange ? (

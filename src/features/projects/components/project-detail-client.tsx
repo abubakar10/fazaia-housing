@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { PageHeader, PageMotion } from "@/components/layout";
+import { FalconLoader } from "@/components/brand";
 import { ErrorState } from "@/components/feedback";
 import { ConfirmDialog } from "@/components/feedback/confirm-dialog";
 import { Badge } from "@/components/ui/badge";
@@ -73,7 +74,7 @@ export function ProjectDetailClient({ projectId }: Props) {
   }
 
   if (dashboardQuery.isLoading || !dashboardQuery.data || !project) {
-    return null;
+    return <FalconLoader label="Loading project dashboard…" />;
   }
 
   return (

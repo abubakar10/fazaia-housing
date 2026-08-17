@@ -5,12 +5,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import { toast } from "sonner";
 import {
   resetPasswordSchema,
   type ResetPasswordInput,
 } from "@/features/auth/schemas/auth.schemas";
 import { TextField } from "@/components/forms";
+import { BrandLogo, FalconLoader } from "@/components/brand";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -25,6 +27,7 @@ export function ResetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, setIsPending] = useState(false);
+  const reduceMotion = useReducedMotion();
 
   const emailFromLink = searchParams.get("email") ?? "";
   const tokenFromLink = searchParams.get("token") ?? "";
@@ -62,8 +65,14 @@ export function ResetPasswordForm() {
   }
 
   return (
-    <Card className="border-border/70 bg-card/80 shadow-soft backdrop-blur-xl">
-      <CardHeader className="space-y-2">
+    <motion.div
+      initial={reduceMotion ? false : { opacity: 0, y: 18 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+    >
+    <Card className="border-white/10 bg-card/95 shadow-glow backdrop-blur-xl">
+      <CardHeader className="space-y-4">
+        <BrandLogo size="md" floating priority />
         <CardTitle className="font-display text-2xl tracking-tight">
           Reset password
         </CardTitle>
@@ -74,7 +83,8 @@ export function ResetPasswordForm() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)} noValidate>
+        {isPending ? <FalconLoader compact label="Updating password…" /> : null}
+        <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)} noValidate hidden={isPending}>
           {hasLinkParams ? (
             <>
               <input type="hidden" {...form.register("email")} />
@@ -132,5 +142,6 @@ export function ResetPasswordForm() {
         </Link>
       </CardFooter>
     </Card>
+    </motion.div>
   );
 }

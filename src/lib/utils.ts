@@ -14,3 +14,20 @@ export function formatDate(value: Date | string | null | undefined) {
     year: "numeric",
   }).format(date);
 }
+
+export function formatMoney(
+  value: number | null | undefined,
+  currency = "PKR",
+) {
+  if (value == null || Number.isNaN(value)) return "—";
+  return new Intl.NumberFormat("en-PK", {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+export function formatPercent(value: number | null | undefined, digits = 1) {
+  if (value == null || Number.isNaN(value)) return "—";
+  return `${value.toFixed(digits)}%`;
+}
