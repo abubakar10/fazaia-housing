@@ -9,7 +9,7 @@
   --color-foreground: var(--foreground);
   --color-canvas: var(--canvas);
   --font-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-display), ui-serif, Georgia, serif;
+  --font-display: var(--font-display), ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
   --font-heading: var(--font-display);
   --color-sidebar-ring: var(--sidebar-ring);
@@ -46,6 +46,7 @@
   --color-navy: var(--navy);
   --shadow-soft: var(--shadow-soft);
   --shadow-glow: var(--shadow-glow);
+  --shadow-elevated: var(--shadow-elevated);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -55,47 +56,50 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* Falcon brand — cyan #00AEEF, navy #06152D, white, black */
+/* AFOHS — refined cyan + deep navy, light surfaces */
 :root {
-  --navy: #06152d;
-  --cyan: #00aeef;
-  --canvas: #eef7fc;
-  --background: #f4fafd;
-  --foreground: #06152d;
+  --navy: #0a1628;
+  --navy-soft: #132238;
+  --cyan: #00b4f0;
+  --cyan-deep: #0090c8;
+  --canvas: #f0f7fc;
+  --background: #f8fbfe;
+  --foreground: #0f1d32;
   --card: #ffffff;
-  --card-foreground: #06152d;
+  --card-foreground: #0f1d32;
   --popover: #ffffff;
-  --popover-foreground: #06152d;
-  --primary: #00aeef;
+  --popover-foreground: #0f1d32;
+  --primary: #00b4f0;
   --primary-foreground: #ffffff;
-  --secondary: #d7eef8;
-  --secondary-foreground: #06152d;
-  --muted: #e4f3fa;
-  --muted-foreground: #4a6278;
-  --accent: #c8ebf8;
-  --accent-foreground: #06152d;
+  --secondary: #e8f4fc;
+  --secondary-foreground: #0f1d32;
+  --muted: #eef6fb;
+  --muted-foreground: #5a6d85;
+  --accent: #dff0fa;
+  --accent-foreground: #0f1d32;
   --destructive: #e11d48;
   --success: #0d9488;
   --warning: #d97706;
-  --border: #c5e4f3;
-  --input: #c5e4f3;
-  --ring: #00aeef;
-  --chart-1: #00aeef;
-  --chart-2: #0ea5e9;
-  --chart-3: #38bdf8;
+  --border: #d8e8f4;
+  --input: #dceef8;
+  --ring: #00b4f0;
+  --chart-1: #00b4f0;
+  --chart-2: #38bdf8;
+  --chart-3: #7dd3fc;
   --chart-4: #64748b;
   --chart-5: #0ea5e9;
-  --radius: 0.85rem;
-  --shadow-soft: 0 12px 32px rgba(6, 21, 45, 0.08);
-  --shadow-glow: 0 10px 28px -8px rgba(0, 174, 239, 0.55);
-  --sidebar: #06152d;
-  --sidebar-foreground: #f8fcff;
-  --sidebar-primary: #00aeef;
+  --radius: 1rem;
+  --shadow-soft: 0 4px 24px rgba(10, 22, 40, 0.06), 0 1px 2px rgba(10, 22, 40, 0.04);
+  --shadow-elevated: 0 20px 50px -12px rgba(10, 22, 40, 0.12), 0 8px 16px -8px rgba(0, 180, 240, 0.15);
+  --shadow-glow: 0 12px 32px -8px rgba(0, 180, 240, 0.45);
+  --sidebar: #0a1628;
+  --sidebar-foreground: #f4f9ff;
+  --sidebar-primary: #00b4f0;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #0c2a4d;
+  --sidebar-accent: rgba(255, 255, 255, 0.06);
   --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: #123055;
-  --sidebar-ring: #00aeef;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-ring: #00b4f0;
 }
 
 @layer base {
@@ -104,15 +108,16 @@
   }
 
   html {
-    @apply font-sans;
+    @apply font-sans scroll-smooth;
+    --font-display: var(--font-sans);
   }
 
   body {
     @apply bg-background text-foreground;
     background-image:
-      radial-gradient(circle at top left, rgba(0, 174, 239, 0.12), transparent 32%),
-      radial-gradient(circle at top right, rgba(6, 21, 45, 0.08), transparent 28%),
-      linear-gradient(180deg, #f4fafd 0%, #e8f4fb 100%);
+      radial-gradient(ellipse 80% 50% at 0% -10%, rgba(0, 180, 240, 0.14), transparent 50%),
+      radial-gradient(ellipse 60% 40% at 100% 0%, rgba(56, 189, 248, 0.1), transparent 45%),
+      linear-gradient(180deg, #f8fbfe 0%, #eef6fc 100%);
     background-attachment: fixed;
   }
 
@@ -133,6 +138,10 @@
     box-shadow: var(--shadow-soft);
   }
 
+  .shadow-elevated {
+    box-shadow: var(--shadow-elevated);
+  }
+
   .shadow-glow {
     box-shadow: var(--shadow-glow);
   }
@@ -143,6 +152,40 @@
 
   .font-display {
     font-family: var(--font-display);
+  }
+
+  .mesh-bg {
+    background-image:
+      radial-gradient(at 40% 20%, rgba(0, 180, 240, 0.18) 0px, transparent 50%),
+      radial-gradient(at 80% 0%, rgba(125, 211, 252, 0.14) 0px, transparent 45%),
+      radial-gradient(at 0% 50%, rgba(0, 144, 200, 0.08) 0px, transparent 50%),
+      linear-gradient(180deg, #071220 0%, #0a1628 42%, #0d1f38 100%);
+  }
+
+  .glass-panel {
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.65);
+    box-shadow: var(--shadow-elevated);
+  }
+
+  .glass-panel-dark {
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .gradient-primary {
+    background: linear-gradient(135deg, #00b4f0 0%, #38bdf8 50%, #0090c8 100%);
+  }
+
+  .text-gradient-primary {
+    background: linear-gradient(135deg, #0090c8 0%, #00b4f0 45%, #38bdf8 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
   }
 
   .animate-falcon-float {
@@ -175,8 +218,8 @@
 
   .brand-logo-ring {
     box-shadow:
-      0 0 0 1px rgba(0, 174, 239, 0.35),
-      0 0 22px rgba(0, 174, 239, 0.28);
+      0 0 0 1px rgba(0, 180, 240, 0.35),
+      0 8px 24px rgba(0, 180, 240, 0.22);
     animation: falcon-glow 3.2s ease-in-out infinite;
   }
 }
@@ -195,11 +238,11 @@
   0%,
   100% {
     transform: scale(1);
-    filter: drop-shadow(0 0 0 rgba(0, 174, 239, 0));
+    filter: drop-shadow(0 0 0 rgba(0, 180, 240, 0));
   }
   50% {
     transform: scale(1.06);
-    filter: drop-shadow(0 0 10px rgba(0, 174, 239, 0.55));
+    filter: drop-shadow(0 0 12px rgba(0, 180, 240, 0.5));
   }
 }
 
@@ -213,13 +256,13 @@
   0%,
   100% {
     box-shadow:
-      0 0 0 1px rgba(0, 174, 239, 0.28),
-      0 0 16px rgba(0, 174, 239, 0.18);
+      0 0 0 1px rgba(0, 180, 240, 0.28),
+      0 8px 20px rgba(0, 180, 240, 0.16);
   }
   50% {
     box-shadow:
-      0 0 0 1px rgba(0, 174, 239, 0.55),
-      0 0 28px rgba(0, 174, 239, 0.42);
+      0 0 0 1px rgba(0, 180, 240, 0.55),
+      0 12px 32px rgba(0, 180, 240, 0.38);
   }
 }
 
@@ -227,11 +270,11 @@
   0%,
   100% {
     transform: translate3d(0, 0, 0) scale(1);
-    opacity: 0.55;
+    opacity: 0.5;
   }
   50% {
     transform: translate3d(24px, -18px, 0) scale(1.12);
-    opacity: 0.9;
+    opacity: 0.85;
   }
 }
 
@@ -248,10 +291,10 @@
   0%,
   100% {
     transform: scaleX(1);
-    opacity: 0.45;
+    opacity: 0.4;
   }
   50% {
     transform: scaleX(1.18);
-    opacity: 0.9;
+    opacity: 0.85;
   }
 }

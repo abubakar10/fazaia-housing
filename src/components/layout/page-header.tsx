@@ -16,15 +16,15 @@ export function PageHeader({
   return (
     <div
       className={cn(
-        "flex flex-col gap-4 border-b border-border/70 pb-6 sm:flex-row sm:items-start sm:justify-between",
+        "flex flex-col gap-4 pb-2 sm:flex-row sm:items-start sm:justify-between",
         className,
       )}
     >
-      <div className="space-y-1.5">
-        <h1 className="font-display text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+      <div className="space-y-2">
+        <h1 className="font-display text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
           {title}
         </h1>
-        <div className="h-1 w-16 rounded-full bg-primary/80 shadow-glow" />
+        <div className="h-1 w-20 rounded-full gradient-primary shadow-glow" />
         {description ? (
           <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-[15px]">
             {description}

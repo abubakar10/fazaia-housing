@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion, useReducedMotion } from "framer-motion";
 import { toast } from "sonner";
-import { APP_FULL_NAME, APP_SHORT_NAME } from "@/lib/constants";
+import { APP_SHORT_NAME } from "@/lib/constants";
 import { loginSchema, type LoginInput } from "@/features/auth/schemas/auth.schemas";
 import { useAuth, useLogin } from "@/features/auth/hooks/use-auth";
 import { TextField } from "@/components/forms";
@@ -19,7 +19,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { BrandLogo, FalconLoader } from "@/components/brand";
+import { BrandLogo, BrandTitle, FalconLoader } from "@/components/brand";
 
 export function LoginForm() {
   const router = useRouter();
@@ -45,38 +45,31 @@ export function LoginForm() {
 
   return (
     <motion.div
-      initial={reduceMotion ? false : { opacity: 0, y: 18, scale: 0.98 }}
+      initial={reduceMotion ? false : { opacity: 0, y: 20, scale: 0.98 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
     >
-      <Card className="relative overflow-hidden border-white/30 bg-white/92 shadow-[0_28px_80px_-28px_rgba(0,174,239,0.75)] backdrop-blur-2xl">
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-[radial-gradient(circle_at_top,rgba(0,174,239,0.24),transparent_68%)]" />
-        <div className="pointer-events-none absolute inset-y-0 right-0 w-40 bg-[radial-gradient(circle_at_center,rgba(56,189,248,0.12),transparent_72%)]" />
-        <CardHeader className="relative space-y-5">
-          <div className="flex items-center gap-4">
-            <BrandLogo size="lg" floating priority className="rounded-3xl" />
-            <div className="space-y-1">
-              <p className="text-sm font-semibold uppercase tracking-[0.32em] text-primary">
-                {APP_SHORT_NAME}
-              </p>
-              <p className="max-w-[16rem] text-xs leading-relaxed text-muted-foreground">
-                {APP_FULL_NAME}
-              </p>
-            </div>
+      <Card className="glass-panel relative overflow-hidden rounded-3xl border-0 ring-0">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-24 gradient-primary opacity-[0.08]" />
+
+        <CardHeader className="relative space-y-5 pb-2">
+          <div className="flex items-center gap-4 lg:hidden">
+            <BrandLogo size="lg" floating priority className="rounded-2xl" />
+            <BrandTitle />
           </div>
           <div>
-            <CardTitle className="font-display text-2xl tracking-tight">
-              Sign in to {APP_SHORT_NAME}
+            <CardTitle className="text-2xl font-bold tracking-tight">
+              Welcome back
             </CardTitle>
             <CardDescription className="mt-2 text-[15px] leading-relaxed">
-              Access a modern housing operations dashboard with secure credentials.
+              Sign in to <span className="font-semibold text-primary">{APP_SHORT_NAME}</span> to
+              continue to your dashboard.
             </CardDescription>
           </div>
         </CardHeader>
+
         <CardContent className="relative">
-          {isPending ? (
-            <FalconLoader label="Signing you in…" compact />
-          ) : null}
+          {isPending ? <FalconLoader label="Signing you in…" compact /> : null}
           <form
             className="space-y-4"
             onSubmit={form.handleSubmit(onSubmit)}
@@ -86,7 +79,7 @@ export function LoginForm() {
             <motion.div
               initial={reduceMotion ? false : { opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.12 }}
+              transition={{ delay: 0.1 }}
             >
               <TextField
                 control={form.control}
@@ -101,7 +94,7 @@ export function LoginForm() {
             <motion.div
               initial={reduceMotion ? false : { opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
+              transition={{ delay: 0.16 }}
             >
               <TextField
                 control={form.control}
@@ -116,27 +109,33 @@ export function LoginForm() {
 
             {error ? (
               <p
-                className="rounded-xl border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm text-destructive"
+                className="rounded-xl border border-destructive/20 bg-destructive/5 px-3 py-2.5 text-sm text-destructive"
                 role="alert"
               >
                 {error}
               </p>
             ) : null}
 
-            <Button type="submit" className="min-h-11 w-full shadow-glow" disabled={isPending}>
+            <Button
+              type="submit"
+              size="lg"
+              className="min-h-12 w-full rounded-xl gradient-primary border-0 text-white shadow-glow hover:opacity-95"
+              disabled={isPending}
+            >
               Sign in
             </Button>
           </form>
         </CardContent>
-        <CardFooter className="relative flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
+
+        <CardFooter className="relative flex flex-col items-stretch gap-3 border-t-0 bg-transparent pt-0 sm:flex-row sm:items-center sm:justify-between">
           <Link
             href="/forgot-password"
             className="text-sm font-medium text-primary hover:underline"
           >
             Forgot password?
           </Link>
-          <p className="text-xs text-muted-foreground">
-            Demo admin: <span className="font-medium text-foreground">admin@afohs.local</span>
+          <p className="rounded-full bg-muted/80 px-3 py-1.5 text-xs text-muted-foreground">
+            Demo: <span className="font-medium text-foreground">admin@afohs.local</span>
           </p>
         </CardFooter>
       </Card>
