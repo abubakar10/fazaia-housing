@@ -1,5 +1,7 @@
 export const APP_NAME =
-  process.env.NEXT_PUBLIC_APP_NAME?.trim() || "Falcon Housing";
+  process.env.NEXT_PUBLIC_APP_NAME?.trim() || "Airforce Officers Housing Scheme";
+export const APP_SHORT_NAME = "AFOHS";
+export const APP_FULL_NAME = "Airforce Officers Housing Scheme";
 export const APP_DESCRIPTION =
   "Enterprise construction management ERP for residential housing programs.";
 

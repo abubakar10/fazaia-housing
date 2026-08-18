@@ -36,7 +36,7 @@ describe("project.schemas", () => {
     const result = updateProjectSchema.parse({
       projectType: "RESIDENTIAL",
       projectPriority: "HIGH",
-      clientOwner: "Fazaia Housing",
+      clientOwner: "Airforce Officers Housing Scheme",
       fiscalYear: 2026,
       gpsLatitude: 33.7,
       gpsLongitude: 73.1,

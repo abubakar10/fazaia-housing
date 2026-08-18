@@ -43,7 +43,7 @@ export function BrandLogo({
     >
       <Image
         src="/brand/falcon-logo.png"
-        alt="Falcon Housing"
+        alt="Airforce Officers Housing Scheme"
         width={px}
         height={px}
         className="size-full object-cover"

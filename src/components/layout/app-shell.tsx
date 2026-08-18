@@ -21,7 +21,7 @@ import {
   Users,
   Warehouse,
 } from "lucide-react";
-import { APP_NAME, NAV_ITEMS } from "@/lib/constants";
+import { APP_FULL_NAME, APP_SHORT_NAME, NAV_ITEMS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -140,12 +140,14 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
 function BrandMark() {
   return (
     <div className="flex items-center gap-3 px-4 py-5">
-      <BrandLogo size="sm" />
+      <BrandLogo size="sm" className="rounded-2xl" />
       <div className="min-w-0">
-        <p className="truncate font-display text-sm font-semibold tracking-tight text-white">
-          {APP_NAME}
+        <p className="font-display text-sm font-semibold uppercase tracking-[0.28em] text-white">
+          {APP_SHORT_NAME}
         </p>
-        <p className="truncate text-xs text-primary/80">Construction ERP</p>
+        <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-primary/80">
+          {APP_FULL_NAME}
+        </p>
       </div>
     </div>
   );
@@ -160,7 +162,12 @@ export function AppSidebar() {
         <NavLinks />
       </div>
       <div className="border-t border-sidebar-border p-4">
-        <p className="text-xs text-sidebar-foreground/50">Falcon Housing · MVP</p>
+        <p className="text-xs font-medium uppercase tracking-[0.22em] text-sidebar-foreground/60">
+          {APP_SHORT_NAME}
+        </p>
+        <p className="mt-1 text-[11px] leading-snug text-sidebar-foreground/50">
+          {APP_FULL_NAME}
+        </p>
       </div>
     </aside>
   );
@@ -196,7 +203,7 @@ export function AppTopbar() {
       .map((part) => part[0])
       .join("")
       .slice(0, 2)
-      .toUpperCase() || "FH";
+      .toUpperCase() || "AF";
 
   return (
     <header className="sticky top-0 z-30 flex min-h-16 items-center gap-3 border-b border-border/70 bg-background/80 px-4 backdrop-blur-xl sm:px-6">
