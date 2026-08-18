@@ -20,8 +20,11 @@ function buildDatasourceUrl() {
       url.searchParams.set("sslmode", "require");
     }
 
-    const neonPooler = url.hostname.includes("-pooler") && url.hostname.includes("neon.tech");
-    if (neonPooler && !url.searchParams.has("pgbouncer")) {
+    const usesPooler =
+      url.port === "6543" ||
+      url.hostname.includes("-pooler") ||
+      url.hostname.includes("pooler.supabase.com");
+    if (usesPooler && !url.searchParams.has("pgbouncer")) {
       url.searchParams.set("pgbouncer", "true");
     }
     if (!url.searchParams.has("connect_timeout")) {
